@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://unpkg.com/peerjs@1.3.2/dist/peerjs.min.js"></script>
+  </head>
+  <body>
+    <div>
+      <input type="text" id="msg" value="message"></button>
+      <button id="sendMessage">send</button>
+    </div>
+    <div id="chat"></div>
+    <script>
+      let msg = document.querySelector("#msg")
+      let sendButton = document.querySelector("#sendMessage")
+      let chat = document.querySelector("#chat")
+      
+      let peer = new Peer({
+        host: "localhost",
+        port: 9000,
+        path: "/myapp",
+      })
+
+      // connects to the broker server
+      peer.on("open", id => {
+        console.log("My peer ID is: " + id)
+      })
+
+      // someone connects to you
+      peer.on("connection", conn => {
+        conn.on("open", () => {
+          // Receive messages
+          conn.on("data", data => {
+            chat.innerHTML += data + "<br>"
+          })
+        })
+      })
+
+      sendButton.addEventListener("click", () => {
+        let req = new XMLHttpRequest()
+        req.onload = function() {
+          JSON.parse(this.responseText).forEach(x => {
+            if (x != peer.id) {
+              console.log(x)
+              let conn = peer.connect(x)
+              conn.on("open", () => {
+                chat.innerHTML += "me: " + msg.value + "<br>"
+                conn.send(msg.value)
+              })
+            }
+          })
+        }
+        req.open("GET", "http://127.0.0.1:9000/myapp/peerjs/peers")
+        req.send()
+      })
+    </script>
+  </body>
+</html>
