@@ -1,0 +1,13 @@
+*.DS_Store
+*.swp
+/node_modules/
+/ext/node_modules/
+/output/
+/.spago/
+/bower_components/
+/out/
+/deps/
+.psci_modules/
+_build/
+*.lock
+*.dump

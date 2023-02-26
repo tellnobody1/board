@@ -1,5 +1,16 @@
 # board
 
+## build
+
+```sh
+brew install node
+npm i
+bin/com
+bin/css
+open public/index.html
+npx spago repl
+```
+
 ## demo
 
 ```sh

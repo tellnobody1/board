@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "devDependencies": {
+    "pscid": "*",
+    "purescript": "*",
+    "purescript-psa": "*",
+    "sass": "*",
+    "spago": "*"
+  }
+}
