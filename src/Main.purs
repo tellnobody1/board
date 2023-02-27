@@ -1,4 +1,4 @@
-module App where
+module Main where
 
 import Prelude hiding (div)
 
@@ -60,8 +60,8 @@ appClass = component "App" \this -> do
       [ text $ state.keyText "uk"
       ]
 
-view :: Effect Unit
-view = do
+main :: Effect Unit
+main = do
   doc <- window >>= document
   elem <- getElementById "container" $ toNonElementParentNode doc
   container <- maybe (throw "container not found") pure elem
