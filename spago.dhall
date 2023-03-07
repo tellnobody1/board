@@ -17,6 +17,7 @@
   , "js-timers"
   , "lists"
   , "maybe"
+  , "media-types"
   , "ordered-collections"
   , "prelude"
   , "protobuf"
@@ -31,6 +32,7 @@
   , "unsafe-coerce"
   , "web-dom"
   , "web-events"
+  , "web-file"
   , "web-html"
   ]
 , packages = ./packages.dhall

@@ -1,2 +1,4 @@
-key.uk=Українська
-key.en=English
+uk=Українська
+en=English
+question=Питання
+post=Опублікувати

@@ -5,9 +5,13 @@
 ```sh
 brew install node
 npm i
+
 bin/com
 bin/css
-open public/index.html
+
+bin/run
+open http://localhost:9001
+
 npx spago repl
 ```
 
