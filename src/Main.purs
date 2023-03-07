@@ -122,7 +122,7 @@ appClass = component "App" \this -> do
       ]
 
   showImage :: Maybe String -> ReactElement
-  showImage Nothing = div [ cn "rounded bg-light", style { width: "100%", height: "270px" } ] [ ]
+  showImage Nothing = div [ cn "rounded bg-light", style { aspectRatio: "4 / 3" } ] [ ]
   showImage (Just url) = img [ cn "rounded", src url ]
 
 main :: Effect Unit

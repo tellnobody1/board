@@ -5015,8 +5015,7 @@ var PS = {};
       var showImage = function (v) {
           if (v instanceof Data_Maybe.Nothing) {
               return React_DOM.div([ Lib_React.cn("rounded bg-light"), React_DOM_Props.style({
-                  width: "100%",
-                  height: "270px"
+                  aspectRatio: "4 / 3"
               }) ])([  ]);
           };
           if (v instanceof Data_Maybe.Just) {
