@@ -3,7 +3,7 @@ module Main where
 import Prelude hiding (div)
 
 import Affjax.RequestHeader (RequestHeader(..))
-import Data.Array (take, drop, modifyAt)
+import Data.Array (take, drop, modifyAt, (:))
 import Data.Foldable (find)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
@@ -31,13 +31,15 @@ import Web.HTML.Window (document, location)
 import Web.File.Url (createObjectURL)
 
 type Props =
-  { apiKey :: String
+  { imagePath :: String
+  , imageHeaders :: Array RequestHeader
   }
 
 type State =
   { lang :: String
   , keyText :: String -> String
   , cards :: Array Card
+  , question :: String
   }
 
 type Card =
@@ -54,6 +56,7 @@ appClass = component "App" \this -> do
       { lang: "uk"
       , keyText: \key -> key
       , cards: [ { title: "Good morning!", image: Nothing }, { title: "Hello!", image: Nothing }, { title: "How are you?", image: Nothing }, { title: "???", image: Nothing } ]
+      , question: ""
       } :: State
     , render: render this
     , componentDidMount: do
@@ -75,7 +78,7 @@ appClass = component "App" \this -> do
   fetchImage :: This -> Int -> Effect Unit
   fetchImage this index = do
     props <- getProps this
-    getBlobEff "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375" [ Accept $ MediaType "image/jpg", RequestHeader "X-Api-Key" props.apiKey ] \v -> do
+    getBlobEff props.imagePath props.imageHeaders \v -> do
       url <- createObjectURL v
       modifyState this \s -> s { cards = fromMaybe s.cards (modifyAt index (_ { image = Just url }) s.cards) }
 
@@ -84,7 +87,7 @@ appClass = component "App" \this -> do
     form <- showForm this
     cards <- showCards this
     pure $ 
-      div [ cn "container mt-4" ]
+      div [ cn "container mt-3 mt-md-4" ]
       [ form
       , cards
       ]
@@ -96,8 +99,17 @@ appClass = component "App" \this -> do
       div [ cn "row" ]
       [ div [ cn "col" ]
         [ div [ cn "input-group" ]
-          [ input [ _type "text", cn "form-control", placeholder $ state.keyText "question", autoFocus true ]
-          , button [ _type "button", cn "btn btn-primary" ] [ text $ state.keyText "post" ]
+          [ input
+            [ _type "text", cn "form-control", placeholder $ state.keyText "question", autoFocus true
+            , value state.question
+            , onChangeValue \v -> modifyState this _ { question = v }
+            ]
+          , button
+            [ _type "button", cn "btn btn-primary"
+            , onClick \_ -> do
+                modifyState this \s -> s { cards = { title: state.question, image: Nothing } : s.cards, question = "" }
+                fetchImage this 0
+            ] [ text $ state.keyText "post" ]
           ]
         ]
       ]
@@ -130,5 +142,12 @@ main = do
   doc <- window >>= document
   elem <- getElementById "container" $ toNonElementParentNode doc
   container <- maybe (throw "container not found") pure elem
-  let element = createLeafElement appClass { apiKey: "0YJRpHZcyfY185HL1U2cPA==kJYRAKy5BmMcEWHD" }
+  let props = {
+      imagePath: "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375"
+    , imageHeaders:
+      [ Accept $ MediaType "image/jpg"
+      , RequestHeader "X-Api-Key" "0YJRpHZcyfY185HL1U2cPA==kJYRAKy5BmMcEWHD"
+      ]
+    }
+  let element = createLeafElement appClass props
   void $ render element container
