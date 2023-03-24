@@ -18,6 +18,7 @@ import Effect.Class.Console (infoShow)
 import Effect.Exception (throw)
 import Lib.Ajax (getEff, getBlobEff)
 import Lib.React (cn, onChangeValue)
+import Lib.Peer (Peer, initPeer, onData, sendData)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (a, button, div, img, li, nav, option, select, span, text, ul, input, h5)
 import React.DOM.Dynamic (menuitem)
@@ -33,6 +34,7 @@ import Web.File.Url (createObjectURL)
 type Props =
   { imagePath :: String
   , imageHeaders :: Array RequestHeader
+  , peer :: Peer
   }
 
 type State =
@@ -61,6 +63,8 @@ appClass = component "App" \this -> do
     , render: render this
     , componentDidMount: do
         setLang this "uk"
+        props <- getProps this
+        onData props.peer (\x -> modifyState this \s -> s { cards = { title: x, image: Nothing } : s.cards })
         void $ fetchImages this
     }
   where
@@ -95,6 +99,7 @@ appClass = component "App" \this -> do
   showForm :: This -> Effect ReactElement
   showForm this = do
     state <- getState this
+    props <- getProps this
     pure $
       div [ cn "row" ]
       [ div [ cn "col" ]
@@ -107,6 +112,7 @@ appClass = component "App" \this -> do
           , button
             [ _type "button", cn "btn btn-primary"
             , onClick \_ -> do
+                sendData props.peer state.question
                 modifyState this \s -> s { cards = { title: state.question, image: Nothing } : s.cards, question = "" }
                 fetchImage this 0
             ] [ text $ state.keyText "post" ]
@@ -142,12 +148,14 @@ main = do
   doc <- window >>= document
   elem <- getElementById "container" $ toNonElementParentNode doc
   container <- maybe (throw "container not found") pure elem
+  peer <- initPeer "localhost" 9000 "/myapp"
   let props = {
       imagePath: "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375"
     , imageHeaders:
       [ Accept $ MediaType "image/jpg"
       , RequestHeader "X-Api-Key" "0YJRpHZcyfY185HL1U2cPA==kJYRAKy5BmMcEWHD"
       ]
+    , peer: peer
     }
   let element = createLeafElement appClass props
   void $ render element container
