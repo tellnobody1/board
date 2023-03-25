@@ -6,7 +6,6 @@ exports.initPeer = function(host) {
           host: host,
           port: port,
           path: path,
-          secure: false,
         })
       }
     }
@@ -41,7 +40,7 @@ exports.sendData = function(peer) {
           }
         })
       }
-      req.open("GET", "http://" + peer.options.host + ":" + peer.options.port + peer.options.path + "peerjs/peers")
+      req.open("GET", (peer.options.secure ? "https" : "http") + "://" + peer.options.host + ":" + peer.options.port + peer.options.path + "peerjs/peers")
       req.send()
     }
   }

@@ -3,31 +3,27 @@ module Main where
 import Prelude hiding (div)
 import Affjax.RequestHeader (RequestHeader(..))
 import Data.Array (take, drop, modifyAt, (:))
-import Data.Foldable (find)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.MediaType (MediaType(..))
-import Data.String.Common (joinWith, split, toLower, trim, null)
+import Data.String.Common (joinWith, split, toLower)
 import Data.String.Pattern (Pattern(Pattern))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
-import Effect.Class.Console (infoShow)
 import Effect.Exception (throw)
 import Lib.Ajax (getEff, getBlobEff)
 import Lib.React (cn, onChangeValue)
 import Lib.Peer (Peer, initPeer, onData, sendData)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
-import React.DOM (a, button, div, img, li, nav, option, select, span, text, ul, input, h5)
-import React.DOM.Dynamic (menuitem)
-import React.DOM.Props (_type, height, href, onClick, src, style, value, _id, placeholder, autoFocus)
+import React.DOM (button, div, h5, img, input, text)
+import React.DOM.Props (_type, autoFocus, onClick, placeholder, src, style, value)
 import ReactDOM (render)
 import Web.DOM.NonElementParentNode (getElementById)
 import Web.HTML (window)
 import Web.HTML.HTMLDocument (toNonElementParentNode)
-import Web.HTML.Location (protocol, hostname)
-import Web.HTML.Window (document, location)
+import Web.HTML.Window (document)
 import Web.File.Url (createObjectURL)
 
 type Props =
@@ -147,7 +143,7 @@ main = do
   doc <- window >>= document
   elem <- getElementById "container" $ toNonElementParentNode doc
   container <- maybe (throw "container not found") pure elem
-  peer <- initPeer "92.249.90.111" 9000 "/myapp"
+  peer <- initPeer "uaapps.xyz" 443 "/board"
   let props = {
       imagePath: "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375"
     , imageHeaders:

@@ -4660,7 +4660,6 @@ var PS = {};
             host: host,
             port: port,
             path: path,
-            secure: false,
           })
         }
       }
@@ -4695,7 +4694,7 @@ var PS = {};
             }
           })
         }
-        req.open("GET", "http://" + peer.options.host + ":" + peer.options.port + peer.options.path + "peerjs/peers")
+        req.open("GET", (peer.options.secure ? "https" : "http") + "://" + peer.options.host + ":" + peer.options.port + peer.options.path + "peerjs/peers")
         req.send()
       }
     }
@@ -5139,7 +5138,7 @@ var PS = {};
           if (v instanceof Data_Maybe.Just) {
               return React_DOM.img([ Lib_React.cn("rounded"), React_DOM_Props.src(v.value0) ]);
           };
-          throw new Error("Failed pattern match at Main (line 141, column 3 - line 141, column 44): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at Main (line 137, column 3 - line 137, column 44): " + [ v.constructor.name ]);
       };
       var showCard = function (v) {
           return function (card) {
@@ -5294,7 +5293,7 @@ var PS = {};
       var doc = Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.document)();
       var elem = Web_DOM_NonElementParentNode.getElementById("container")(Web_HTML_HTMLDocument.toNonElementParentNode(doc))();
       var container = Data_Maybe.maybe(Effect_Exception["throw"]("container not found"))(Control_Applicative.pure(Effect.applicativeEffect))(elem)();
-      var peer = Lib_Peer.initPeer("92.249.90.111")(9000)("/myapp")();
+      var peer = Lib_Peer.initPeer("uaapps.xyz")(443)("/board")();
       var props = {
           imagePath: "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375",
           imageHeaders: [ new Affjax_RequestHeader.Accept("image/jpg"), new Affjax_RequestHeader.RequestHeader("X-Api-Key", "0YJRpHZcyfY185HL1U2cPA==kJYRAKy5BmMcEWHD") ],

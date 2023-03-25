@@ -15,11 +15,11 @@ open http://localhost:9001
 npx spago repl
 ```
 
-## demo
+## server
 
 ```sh
-npm install peer -g
-peerjs --port 9000 --key peerjs --path /myapp --allow_discovery
-open index.html
-open index.html
+npm install peer
+sudo node bin/server.js
+curl https://uaapps.xyz/board
+open https://uaapps.github.io/board/
 ```
