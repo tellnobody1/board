@@ -1,49 +1,33 @@
 "use strict"
 
-export const initPeer = function(host) {
-  return function(port) {
-    return function(path) {
-      return function() {
-        return new Peer({
-          host: host,
-          port: port,
-          path: path,
-        })
-      }
-    }
-  }
-}
+export const initPeer = host => port => path => () =>
+  new Peer({
+    host: host,
+    port: port,
+    path: path,
+  })
 
-export const onData = function(peer) {
-  return function(onData) {
-    return function() {
-      peer.on("connection", conn => {
+export const onData = peer => onData => () =>
+  peer.on("connection", conn =>
+    conn.on("open", () =>
+      conn.on("data", data =>
+        onData(data)()
+      )
+    )
+  )
+
+export const sendData = peer => data => () => {
+  let req = new XMLHttpRequest()
+  req.onload = function() {
+    JSON.parse(this.responseText).forEach(x => {
+      if (x != peer.id) {
+        let conn = peer.connect(x)
         conn.on("open", () => {
-          conn.on("data", data => {
-            onData(data)()
-          })
-        })
-      })
-    }
-  }
-}
-
-export const sendData = function(peer) {
-  return function(data) {
-    return function() {
-      let req = new XMLHttpRequest()
-      req.onload = function() {
-        JSON.parse(this.responseText).forEach(x => {
-          if (x != peer.id) {
-            let conn = peer.connect(x)
-            conn.on("open", () => {
-              conn.send(data)
-            })
-          }
+          conn.send(data)
         })
       }
-      req.open("GET", (peer.options.secure ? "https" : "http") + "://" + peer.options.host + ":" + peer.options.port + peer.options.path + "peerjs/peers")
-      req.send()
-    }
+    })
   }
+  req.open("GET", "https://" + peer.options.host + ":" + peer.options.port + peer.options.path + "peerjs/peers")
+  req.send()
 }
