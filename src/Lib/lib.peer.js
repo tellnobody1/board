@@ -6,6 +6,7 @@ exports.initPeer = function(host) {
           host: host,
           port: port,
           path: path,
+          secure: false,
         })
       }
     }

@@ -4660,6 +4660,7 @@ var PS = {};
             host: host,
             port: port,
             path: path,
+            secure: false,
           })
         }
       }
@@ -5138,7 +5139,7 @@ var PS = {};
           if (v instanceof Data_Maybe.Just) {
               return React_DOM.img([ Lib_React.cn("rounded"), React_DOM_Props.src(v.value0) ]);
           };
-          throw new Error("Failed pattern match at Main (line 142, column 3 - line 142, column 44): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at Main (line 141, column 3 - line 141, column 44): " + [ v.constructor.name ]);
       };
       var showCard = function (v) {
           return function (card) {
