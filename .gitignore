@@ -1,13 +1,4 @@
-*.DS_Store
-*.swp
-/node_modules/
-/ext/node_modules/
-/output/
+.DS_Store
 /.spago/
-/bower_components/
-/out/
-/deps/
-.psci_modules/
-_build/
-*.lock
-*.dump
+/node_modules/
+/output/
