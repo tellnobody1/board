@@ -5,7 +5,7 @@ module Lib.Ajax
 
 import Prelude hiding (div)
 
-import Affjax as Affjax
+import Affjax.Web as Affjax
 import Affjax.RequestHeader (RequestHeader)
 import Affjax.ResponseFormat as ResponseFormat
 import Affjax.StatusCode (StatusCode(StatusCode))

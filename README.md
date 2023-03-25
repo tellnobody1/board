@@ -19,7 +19,7 @@ npx spago repl
 
 ```sh
 npm install peer
-sudo node bin/server.js
+screen -S board "sudo node server.js"
 curl https://uaapps.xyz/board
 open https://uaapps.github.io/board/
 ```

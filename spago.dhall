@@ -2,6 +2,7 @@
 , dependencies =
   [ "aff"
   , "affjax"
+  , "affjax-web"
   , "arrays"
   , "console"
   , "effect"
@@ -13,7 +14,6 @@
   , "media-types"
   , "ordered-collections"
   , "prelude"
-  , "psci-support"
   , "react"
   , "react-dom"
   , "strings"

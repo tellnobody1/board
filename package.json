@@ -1,10 +1,13 @@
 {
   "private": true,
   "devDependencies": {
-    "pscid": "*",
-    "purescript": "0.14.9",
-    "purescript-psa": "*",
+    "purescript": "0.15.8",
     "sass": "*",
-    "spago": "*"
+    "spago": "0.20.9"
+  },
+  "dependencies": {
+    "esbuild": "0.17.13",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

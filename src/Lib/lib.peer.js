@@ -1,4 +1,6 @@
-exports.initPeer = function(host) {
+"use strict"
+
+export const initPeer = function(host) {
   return function(port) {
     return function(path) {
       return function() {
@@ -12,7 +14,7 @@ exports.initPeer = function(host) {
   }
 }
 
-exports.onData = function(peer) {
+export const onData = function(peer) {
   return function(onData) {
     return function() {
       peer.on("connection", conn => {
@@ -26,7 +28,7 @@ exports.onData = function(peer) {
   }
 }
 
-exports.sendData = function(peer) {
+export const sendData = function(peer) {
   return function(data) {
     return function() {
       let req = new XMLHttpRequest()
