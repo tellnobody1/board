@@ -1,7 +1,6 @@
 module Main where
 
 import Prelude hiding (div)
-
 import Affjax.RequestHeader (RequestHeader(..))
 import Data.Array (take, drop, modifyAt, (:))
 import Data.Foldable (find)
@@ -148,7 +147,7 @@ main = do
   doc <- window >>= document
   elem <- getElementById "container" $ toNonElementParentNode doc
   container <- maybe (throw "container not found") pure elem
-  peer <- initPeer "localhost" 9000 "/myapp"
+  peer <- initPeer "92.249.90.111" 9000 "/myapp"
   let props = {
       imagePath: "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375"
     , imageHeaders:

@@ -5293,7 +5293,7 @@ var PS = {};
       var doc = Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.document)();
       var elem = Web_DOM_NonElementParentNode.getElementById("container")(Web_HTML_HTMLDocument.toNonElementParentNode(doc))();
       var container = Data_Maybe.maybe(Effect_Exception["throw"]("container not found"))(Control_Applicative.pure(Effect.applicativeEffect))(elem)();
-      var peer = Lib_Peer.initPeer("localhost")(9000)("/myapp")();
+      var peer = Lib_Peer.initPeer("92.249.90.111")(9000)("/myapp")();
       var props = {
           imagePath: "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375",
           imageHeaders: [ new Affjax_RequestHeader.Accept("image/jpg"), new Affjax_RequestHeader.RequestHeader("X-Api-Key", "0YJRpHZcyfY185HL1U2cPA==kJYRAKy5BmMcEWHD") ],
