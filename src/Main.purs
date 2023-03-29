@@ -17,8 +17,8 @@ import Lib.Ajax (getEff, getBlobEff)
 import Lib.React (cn, onChangeValue)
 import Lib.Peer (Peer, initPeer, onData, sendData)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
-import React.DOM (button, div, h5, img, input, text)
-import React.DOM.Props (_type, autoFocus, onClick, placeholder, src, style, value)
+import React.DOM (button, div, input, text, span)
+import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
 import ReactDOM (render)
 import Web.DOM.NonElementParentNode (getElementById)
 import Web.HTML (window)
@@ -86,7 +86,7 @@ appClass = component "App" \this -> do
     form <- showForm this
     cards <- showCards this
     pure $ 
-      div [ cn "container mt-3 mt-md-4" ]
+      div [ ]
       [ form
       , cards
       ]
@@ -96,47 +96,35 @@ appClass = component "App" \this -> do
     state <- getState this
     props <- getProps this
     pure $
-      div [ cn "row" ]
-      [ div [ cn "col" ]
-        [ div [ cn "input-group" ]
-          [ input
-            [ _type "text", cn "form-control", placeholder $ state.keyText "question", autoFocus true
-            , value state.question
-            , onChangeValue \v -> modifyState this _ { question = v }
-            ]
-          , button
-            [ _type "button", cn "btn btn-primary"
-            , onClick \_ -> do
-                sendData props.peer state.question
-                modifyState this \s -> s { cards = { title: state.question, image: Nothing } : s.cards, question = "" }
-                fetchImage this 0
-            ] [ text $ state.keyText "post" ]
-          ]
+      div [ cn "form" ]
+      [ input
+        [ _type "text", placeholder $ state.keyText "question", autoFocus true
+        , value state.question
+        , onChangeValue \v -> modifyState this _ { question = v }
         ]
+      , button
+        [ _type "button"
+        , onClick \_ -> do
+            sendData props.peer state.question
+            modifyState this \s -> s { cards = { title: state.question, image: Nothing } : s.cards, question = "" }
+            fetchImage this 0
+        ] [ text $ state.keyText "post" ]
       ]
 
   showCards :: This -> Effect ReactElement
   showCards this = do
     state <- getState this
-    rows <- sequence $ map (showCard this) state.cards
-    pure $
-      div [ cn "row row-cols-1 row-cols-md-3 g-4 mt-0" ] rows
+    let rows = map showCard state.cards
+    pure $ div [ cn "cards" ] rows
 
-  showCard :: This -> Card -> Effect ReactElement
-  showCard _ card = do
-    pure $
-      div [ cn "col" ]
-      [ div [ cn "card" ]
-        [ showImage card.image
-        , div [ cn "card-img-overlay" ]
-          [ h5 [ cn "card-title bg-dark d-inline px-2 py-1" ] [ text $ card.title ]
-          ]
-        ]
-      ]
+  showCard :: Card -> ReactElement
+  showCard { title, image: Nothing } =
+    div [ cn "card" ] [ showTitle title ]
+  showCard { title, image: Just url } =
+    div [ cn "card", style { backgroundImage: "url("<>url<>")" } ] [ showTitle title ]
 
-  showImage :: Maybe String -> ReactElement
-  showImage Nothing = div [ cn "rounded bg-light", style { aspectRatio: "4 / 3" } ] [ ]
-  showImage (Just url) = img [ cn "rounded", src url ]
+  showTitle :: String -> ReactElement
+  showTitle title = span [ cn "card-title" ] [ text title ]
 
 main :: Effect Unit
 main = do

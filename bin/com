@@ -1,6 +1,6 @@
 npx spago bundle-app --main Main --to public/index.js --minify
 
-files=("bootstrap.min.css" "app.css" "index.js")
+files=("app.css" "index.js")
 for file in ${files[@]}; do
   cmd="date -r public/$file +'%s'"
   v=$(eval "$cmd")
