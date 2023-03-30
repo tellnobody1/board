@@ -2,12 +2,9 @@
 
 export const initPeer = options => () => new Peer(options)
 
-export const onData = peer => f => () =>
-  peer.on("connection", conn =>
-    conn.on("open", () =>
-      conn.on("data", data => f(data)())
-    )
-  )
+export const onConnection = peer => f => () => peer.on("connection", conn => f(conn)())
+
+export const onData = conn => f => () => conn.on("data", data => f(data)())
 
 export const connect = peer => id => () => peer.connect(id)
 

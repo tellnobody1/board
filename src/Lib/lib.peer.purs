@@ -33,7 +33,9 @@ foreign import data Connection :: Type
 
 foreign import initPeer :: Options -> Effect Peer
 
-foreign import onData :: Peer -> (Data -> Effect Unit) -> Effect Unit
+foreign import onConnection :: Peer -> (Connection -> Effect Unit) -> Effect Unit
+
+foreign import onData :: Connection -> (Data -> Effect Unit) -> Effect Unit
 
 foreign import connect :: Peer -> ID -> Effect Connection
 

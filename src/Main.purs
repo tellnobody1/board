@@ -15,7 +15,7 @@ import Effect (Effect)
 import Effect.Exception (throw)
 import Lib.Ajax (getEff, getBlobEff)
 import Lib.React (cn, onChangeValue)
-import Lib.Peer (Peer, initPeer, onData, broadcast)
+import Lib.Peer (Peer, initPeer, onConnection, onOpen, onData, broadcast)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
@@ -59,7 +59,9 @@ appClass = component "App" \this -> do
     , componentDidMount: do
         setLang this "uk"
         props <- getProps this
-        onData props.peer (\x -> modifyState this \s -> s { cards = { title: x, image: Nothing } : s.cards })
+        onConnection props.peer \conn ->
+          onOpen conn $ onData conn \x ->
+            modifyState this \s -> s { cards = { title: x, image: Nothing } : s.cards }
         void $ fetchImages this
     }
   where
