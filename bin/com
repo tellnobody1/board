@@ -2,7 +2,7 @@ npx spago bundle-app --main Main --to public/index.js --minify
 
 files=("app.css" "index.js")
 for file in ${files[@]}; do
-  cmd="date -r public/$file +'%s'"
+  cmd="md5 -q public/$file"
   v=$(eval "$cmd")
-  sed -i '' "s/\($file?\)\([0-9]*\)/\1$v/" public/index.html;
+  sed -i '' "s#\($file?\)\([0-9a-f]*\)#\1$v#" public/index.html;
 done
