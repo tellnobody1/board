@@ -15,7 +15,7 @@ import Effect (Effect)
 import Effect.Exception (throw)
 import Lib.Ajax (getEff, getBlobEff)
 import Lib.React (cn, onChangeValue)
-import Lib.Peer (Peer, initPeer, onConnection, onOpen, onData, broadcast)
+import Lib.Peer (Peer, initPeer, onConnection, onOpen, onData, peers, connect, send)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
@@ -107,7 +107,10 @@ appClass = component "App" \this -> do
       , button
         [ _type "button"
         , onClick \_ -> do
-            broadcast props.peer state.question
+            let peer = props.peer
+            let data_ = state.question
+            peers peer \ids -> void $ sequence $ map (\id ->
+              connect peer id >>= \conn -> onOpen conn $ send conn data_) ids
             modifyState this \s -> s { cards = { title: state.question, image: Nothing } : s.cards, question = "" }
             fetchImage this 0
         ] [ text $ state.keyText "post" ]

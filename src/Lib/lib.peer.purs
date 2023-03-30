@@ -6,7 +6,6 @@ import Affjax.StatusCode (StatusCode(StatusCode))
 import Affjax.Web (get)
 import Data.Array (filter)
 import Data.Either (Either(Left, Right))
-import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Simple.JSON (readJSON)
@@ -43,14 +42,11 @@ foreign import onOpen :: Connection -> Effect Unit -> Effect Unit
 
 foreign import send :: Connection -> Data -> Effect Unit
 
-broadcast :: Peer -> Data -> Effect Unit
-broadcast peer data_ =
+peers :: Peer -> (Array ID -> Effect Unit) -> Effect Unit
+peers peer f =
   runAff_ (case _ of
-    Right (Right a) -> case readJSON a of
-      Right ids -> void $
-        sequence $
-        map (\id -> connect peer id >>= \conn -> onOpen conn $ send conn data_) $
-        filter (_ /= peer.id) ids
+    Right (Right body) -> case readJSON body of
+      Right ids -> f $ filter (_ /= peer.id) ids
       _ -> pure unit
     _ -> pure unit
   ) $ map (case _ of
