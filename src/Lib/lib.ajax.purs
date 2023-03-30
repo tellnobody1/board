@@ -3,7 +3,7 @@ module Lib.Ajax
   , getBlobEff
   ) where
 
-import Prelude hiding (div)
+import Prelude
 
 import Affjax.Web as Affjax
 import Affjax.RequestHeader (RequestHeader)

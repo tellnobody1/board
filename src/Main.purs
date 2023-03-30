@@ -15,7 +15,7 @@ import Effect (Effect)
 import Effect.Exception (throw)
 import Lib.Ajax (getEff, getBlobEff)
 import Lib.React (cn, onChangeValue)
-import Lib.Peer (Peer, initPeer, onData, sendData)
+import Lib.Peer (Peer, initPeer, onData, broadcast)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
@@ -105,7 +105,7 @@ appClass = component "App" \this -> do
       , button
         [ _type "button"
         , onClick \_ -> do
-            sendData props.peer state.question
+            broadcast props.peer state.question
             modifyState this \s -> s { cards = { title: state.question, image: Nothing } : s.cards, question = "" }
             fetchImage this 0
         ] [ text $ state.keyText "post" ]
@@ -131,7 +131,7 @@ main = do
   doc <- window >>= document
   elem <- getElementById "container" $ toNonElementParentNode doc
   container <- maybe (throw "container not found") pure elem
-  peer <- initPeer "uaapps.xyz" 443 "/board"
+  peer <- initPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
   let props = {
       imagePath: "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375"
     , imageHeaders:

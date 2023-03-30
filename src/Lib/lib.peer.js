@@ -1,33 +1,16 @@
 "use strict"
 
-export const initPeer = host => port => path => () =>
-  new Peer({
-    host: host,
-    port: port,
-    path: path,
-  })
+export const initPeer = options => () => new Peer(options)
 
-export const onData = peer => onData => () =>
+export const onData = peer => f => () =>
   peer.on("connection", conn =>
     conn.on("open", () =>
-      conn.on("data", data =>
-        onData(data)()
-      )
+      conn.on("data", data => f(data)())
     )
   )
 
-export const sendData = peer => data => () => {
-  let req = new XMLHttpRequest()
-  req.onload = function() {
-    JSON.parse(this.responseText).forEach(x => {
-      if (x != peer.id) {
-        let conn = peer.connect(x)
-        conn.on("open", () => {
-          conn.send(data)
-        })
-      }
-    })
-  }
-  req.open("GET", "https://" + peer.options.host + ":" + peer.options.port + peer.options.path + "peerjs/peers")
-  req.send()
-}
+export const connect = peer => id => () => peer.connect(id)
+
+export const onOpen = conn => f => () => conn.on("open", () => f())
+
+export const send = conn => data => () => conn.send(data)
