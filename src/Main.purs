@@ -15,13 +15,12 @@ import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
 import Lib.Affjax (getEff, getBlobEff)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
-import Lib.React (cn, onChange)
+import Lib.React (cn, onChange, createRoot, render)
 import Partial.Unsafe (unsafePartial)
 import Prelude hiding (div)
-import React (ReactClass, ReactComponent, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
+import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
-import ReactDOM (render)
 import Web.DOM.NonElementParentNode (getElementById)
 import Web.File.Url (createObjectURL)
 import Web.HTML (window)
@@ -129,7 +128,7 @@ appClass = component "App" \this -> do
   showTitle :: String -> ReactElement
   showTitle title = span [ cn "card-title" ] [ text title ]
 
-main :: Effect (Maybe ReactComponent)
+main :: Effect Unit
 main = do
   doc <- window >>= document
   container <- getElementById "container" $ toNonElementParentNode doc
@@ -142,5 +141,5 @@ main = do
       ]
     , peer: peer
     }
-  let element = createLeafElement appClass props
-  render element $ unsafePartial $ fromJust container
+  root <- createRoot $ unsafePartial $ fromJust container
+  render root $ createLeafElement appClass props

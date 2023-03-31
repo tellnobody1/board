@@ -18,7 +18,6 @@
   , "prelude"
   , "protobuf"
   , "react"
-  , "react-dom"
   , "simple-json"
   , "strings"
   , "tailrec"
