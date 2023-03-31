@@ -30,7 +30,7 @@ type Peer =
 
 foreign import data Connection :: Type
 
-foreign import initPeer :: Options -> Effect Peer
+foreign import newPeer :: Options -> Effect Peer
 
 foreign import onConnection :: Peer -> (Connection -> Effect Unit) -> Effect Unit
 

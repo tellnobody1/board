@@ -1,12 +1,12 @@
 module Lib.React where
 
+import Prelude
 import Effect (Effect)
-import Prelude hiding (div)
-import React.DOM.Props (Props, className, onChange)
+import React.DOM.Props as R
 import Unsafe.Coerce (unsafeCoerce)
 
-cn :: String -> Props
-cn = className
+cn :: String -> R.Props
+cn = R.className
 
-onChangeValue :: (String -> Effect Unit) -> Props
-onChangeValue f = onChange \e -> f $ (unsafeCoerce e).target.value
+onChange :: (String -> Effect Unit) -> R.Props
+onChange f = R.onChange \e -> f $ (unsafeCoerce e).target.value

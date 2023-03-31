@@ -12,6 +12,7 @@
   , "maybe"
   , "media-types"
   , "ordered-collections"
+  , "partial"
   , "prelude"
   , "react"
   , "react-dom"

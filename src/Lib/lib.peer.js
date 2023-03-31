@@ -1,6 +1,6 @@
 "use strict"
 
-export const initPeer = options => () => new Peer(options)
+export const newPeer = options => () => new Peer(options)
 
 export const onConnection = peer => f => () => peer.on("connection", conn => f(conn)())
 

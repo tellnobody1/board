@@ -4,7 +4,6 @@ module Lib.Ajax
   ) where
 
 import Prelude
-
 import Affjax.Web as Affjax
 import Affjax.RequestHeader (RequestHeader)
 import Affjax.ResponseFormat as ResponseFormat

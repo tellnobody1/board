@@ -5,26 +5,26 @@ import Affjax.RequestHeader (RequestHeader(..))
 import Data.Array (take, drop, modifyAt, (:))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, fromJust)
 import Data.MediaType (MediaType(..))
 import Data.String.Common (joinWith, split, toLower)
 import Data.String.Pattern (Pattern(Pattern))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
-import Effect.Exception (throw)
 import Lib.Ajax (getEff, getBlobEff)
-import Lib.React (cn, onChangeValue)
-import Lib.Peer (Peer, initPeer, onConnection, onOpen, onData, peers, connect, send)
-import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
+import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
+import Lib.React (cn, onChange)
+import Partial.Unsafe (unsafePartial)
+import React (ReactClass, ReactComponent, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
 import ReactDOM (render)
 import Web.DOM.NonElementParentNode (getElementById)
+import Web.File.Url (createObjectURL)
 import Web.HTML (window)
 import Web.HTML.HTMLDocument (toNonElementParentNode)
 import Web.HTML.Window (document)
-import Web.File.Url (createObjectURL)
 
 type Props =
   { imagePath :: String
@@ -64,7 +64,9 @@ appClass = component "App" \this -> do
             modifyState this \s -> s { cards = { title: x, image: Nothing } : s.cards }
         void $ fetchImages this
     }
+
   where
+
   setLang :: This -> String -> Effect Unit
   setLang this lang = do
     getEff ("langs/" <> lang <> ".js") \v -> do
@@ -85,9 +87,10 @@ appClass = component "App" \this -> do
 
   render :: This -> Effect ReactElement
   render this = do
+    state <- getState this
     form <- showForm this
-    cards <- showCards this
-    pure $ 
+    let cards = showCards state.cards
+    pure $
       div [ ]
       [ form
       , cards
@@ -102,25 +105,22 @@ appClass = component "App" \this -> do
       [ input
         [ _type "text", placeholder $ state.keyText "question", autoFocus true
         , value state.question
-        , onChangeValue \v -> modifyState this _ { question = v }
+        , onChange \v -> modifyState this _ { question = v }
         ]
       , button
         [ _type "button"
         , onClick \_ -> do
             let peer = props.peer
             let data_ = state.question
-            peers peer \ids -> void $ sequence $ map (\id ->
-              connect peer id >>= \conn -> onOpen conn $ send conn data_) ids
+            peers peer \ids -> void $ sequence $ ids <#> \id ->
+              connect peer id >>= \conn -> onOpen conn $ send conn data_
             modifyState this \s -> s { cards = { title: state.question, image: Nothing } : s.cards, question = "" }
             fetchImage this 0
         ] [ text $ state.keyText "post" ]
       ]
 
-  showCards :: This -> Effect ReactElement
-  showCards this = do
-    state <- getState this
-    let rows = map showCard state.cards
-    pure $ div [ cn "cards" ] rows
+  showCards :: Array Card -> ReactElement
+  showCards cards = div [ cn "cards" ] $ cards <#> showCard
 
   showCard :: Card -> ReactElement
   showCard { title, image: Nothing } =
@@ -131,12 +131,11 @@ appClass = component "App" \this -> do
   showTitle :: String -> ReactElement
   showTitle title = span [ cn "card-title" ] [ text title ]
 
-main :: Effect Unit
+main :: Effect (Maybe ReactComponent)
 main = do
   doc <- window >>= document
-  elem <- getElementById "container" $ toNonElementParentNode doc
-  container <- maybe (throw "container not found") pure elem
-  peer <- initPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
+  container <- getElementById "container" $ toNonElementParentNode doc
+  peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
   let props = {
       imagePath: "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375"
     , imageHeaders:
@@ -146,4 +145,4 @@ main = do
     , peer: peer
     }
   let element = createLeafElement appClass props
-  void $ render element container
+  render element $ unsafePartial $ fromJust container
