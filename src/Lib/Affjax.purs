@@ -1,4 +1,4 @@
-module Lib.Ajax
+module Lib.Affjax
   ( getEff
   , getBlobEff
   ) where

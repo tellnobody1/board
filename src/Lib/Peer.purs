@@ -1,20 +1,23 @@
 module Lib.Peer where
 
-import Prelude
 import Affjax.ResponseFormat (string)
 import Affjax.StatusCode (StatusCode(StatusCode))
 import Affjax.Web (get)
 import Data.Array (filter)
+import Data.ArrayBuffer.Types (ArrayBuffer)
 import Data.Either (Either(Left, Right))
 import Effect (Effect)
 import Effect.Aff (runAff_)
+import Prelude
+import Proto.Uint8Array (Uint8Array, fromArrayBuffer)
 import Simple.JSON (readJSON)
+import Control.Bind (composeKleisli)
 
 type ID = String
 type Host = String
 type Port = Int
 type Path = String
-type Data = String
+type Data = Uint8Array
 
 type Options =
   { host :: Host
@@ -34,7 +37,10 @@ foreign import newPeer :: Options -> Effect Peer
 
 foreign import onConnection :: Peer -> (Connection -> Effect Unit) -> Effect Unit
 
-foreign import onData :: Connection -> (Data -> Effect Unit) -> Effect Unit
+foreign import onData_ :: Connection -> (ArrayBuffer -> Effect Unit) -> Effect Unit
+
+onData :: Connection -> (Data -> Effect Unit) -> Effect Unit
+onData c f = onData_ c $ composeKleisli fromArrayBuffer f
 
 foreign import connect :: Peer -> ID -> Effect Connection
 

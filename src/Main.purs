@@ -1,8 +1,9 @@
 module Main where
 
-import Prelude hiding (div)
 import Affjax.RequestHeader (RequestHeader(..))
+import Api (Api(Post), Card, decode, encode)
 import Data.Array (take, drop, modifyAt, (:))
+import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, fromJust)
@@ -12,10 +13,11 @@ import Data.String.Pattern (Pattern(Pattern))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
-import Lib.Ajax (getEff, getBlobEff)
+import Lib.Affjax (getEff, getBlobEff)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
 import Lib.React (cn, onChange)
 import Partial.Unsafe (unsafePartial)
+import Prelude hiding (div)
 import React (ReactClass, ReactComponent, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
@@ -39,11 +41,6 @@ type State =
   , question :: String
   }
 
-type Card =
-  { title :: String
-  , image :: Maybe String
-  }
-
 type This = ReactThis Props State
 
 appClass :: ReactClass Props
@@ -52,7 +49,7 @@ appClass = component "App" \this -> do
     { state: 
       { lang: "uk"
       , keyText: \key -> key
-      , cards: [ { title: "Good morning!", image: Nothing }, { title: "Hello!", image: Nothing }, { title: "How are you?", image: Nothing }, { title: "???", image: Nothing } ]
+      , cards: [ { title: "Hello!", image: Nothing } ]
       , question: ""
       } :: State
     , render: render this
@@ -60,8 +57,9 @@ appClass = component "App" \this -> do
         setLang this "uk"
         props <- getProps this
         onConnection props.peer \conn ->
-          onOpen conn $ onData conn \x ->
-            modifyState this \s -> s { cards = { title: x, image: Nothing } : s.cards }
+          onOpen conn $ onData conn \x -> case decode x of
+            Right (Post card) -> modifyState this \s -> s { cards = card : s.cards }
+            _ -> pure unit
         void $ fetchImages this
     }
 
@@ -111,10 +109,10 @@ appClass = component "App" \this -> do
         [ _type "button"
         , onClick \_ -> do
             let peer = props.peer
-            let data_ = state.question
+            let card = { title: state.question, image: Nothing }
             peers peer \ids -> void $ sequence $ ids <#> \id ->
-              connect peer id >>= \conn -> onOpen conn $ send conn data_
-            modifyState this \s -> s { cards = { title: state.question, image: Nothing } : s.cards, question = "" }
+              connect peer id >>= \conn -> onOpen conn $ send conn $ encode $ Post card
+            modifyState this \s -> s { cards = card : s.cards, question = "" }
             fetchImage this 0
         ] [ text $ state.keyText "post" ]
       ]
