@@ -20,5 +20,5 @@ npx spago repl
 npm i peer
 screen -S board "sudo node server.js"
 curl https://uaapps.xyz/board
-open https://uaapps.github.io/board/
+open https://board.uaapps.xyz
 ```
