@@ -24,10 +24,13 @@ import React (ReactClass, ReactElement, ReactThis, component, createLeafElement,
 import React.DOM (button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
 import React.DOM.Props as R
-import Web.DOM.NonElementParentNode (getElementById)
+import Web.Event.EventTarget (addEventListener, eventListener)
 import Web.HTML (window)
-import Web.HTML.HTMLDocument (toNonElementParentNode, setTitle)
-import Web.HTML.Window (document)
+import Web.HTML.Event.EventTypes (domcontentloaded)
+import Web.HTML.HTMLDocument (setTitle, readyState, body)
+import Web.HTML.HTMLDocument.ReadyState (ReadyState(..))
+import Web.HTML.HTMLElement (toElement)
+import Web.HTML.Window (document, toEventTarget)
 
 type Props = { peer :: Peer }
 
@@ -179,9 +182,18 @@ appClass = component "App" \this -> pure
 
 main :: Effect Unit
 main = do
-  doc <- window >>= document
-  container <- getElementById "container" $ toNonElementParentNode doc
-  peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
-  let props = { peer }
-  root <- createRoot $ unsafePartial $ fromJust container
-  render root $ createLeafElement appClass props
+  ready <- readyState =<< document =<< window
+  case ready of
+    Loading -> do
+      listener <- eventListener \_ -> renderClass
+      target <- toEventTarget <$> window
+      addEventListener domcontentloaded listener false target
+    _ -> renderClass
+
+  where
+
+  renderClass :: Effect Unit
+  renderClass = do
+    peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
+    root <- (body =<< document =<< window) <#> unsafePartial fromJust <#> toElement >>= createRoot
+    render root $ createLeafElement appClass { peer }
