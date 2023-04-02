@@ -15,7 +15,7 @@ import Lib.Affjax (getEff)
 import Lib.Crypto (crypto, randomUUID)
 import Lib.Foreign (null)
 import Lib.History (pushState, replaceState, addPopstateListener, pathnames)
-import Lib.IndexedDB (IDBDatabase, add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, readTransaction, result, result', writeTransaction, getAllKeys, delete)
+import Lib.IndexedDB (IDBDatabase, add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, transaction, readonly, result, result', readwrite, getAllKeys, delete)
 import Lib.Ninjas (randomImage)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
 import Lib.React (cn, onChange, createRoot)
@@ -231,9 +231,9 @@ renderClass = do
     db <- result' openReq
     purgeCards db
     let store =
-          { add: \x -> add x =<< objectStore "cards" =<< writeTransaction "cards" db
+          { add: \x -> add x =<< objectStore "cards" =<< transaction readwrite "cards" db
           , all: \f -> do
-              readReq <- getAll =<< objectStore "cards" =<< readTransaction "cards" db
+              readReq <- getAll =<< objectStore "cards" =<< transaction readonly "cards" db
               onsuccess readReq do
                 xs <- result readReq
                 f $ foldl (\acc x -> case decode x of
@@ -246,8 +246,8 @@ renderClass = do
 
 purgeCards :: IDBDatabase -> Effect Unit
 purgeCards db = do
-  keys <- getAllKeys =<< objectStore "cards" =<< readTransaction "cards" db
+  keys <- getAllKeys =<< objectStore "cards" =<< transaction readonly "cards" db
   onsuccess keys do
     xs <- result keys <#> dropEnd 100
-    writeStore <- objectStore "cards" =<< writeTransaction "cards" db
+    writeStore <- objectStore "cards" =<< transaction readwrite "cards" db
     void $ sequence $ delete writeStore <$> xs

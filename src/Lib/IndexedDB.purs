@@ -2,7 +2,7 @@ module Lib.IndexedDB where
 
 import Effect (Effect)
 import Foreign (Foreign)
-import Prelude (Unit, (>>>))
+import Prelude (Unit, class Show, show, (>>>), ($))
 import Proto.Uint8Array (Uint8Array)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.HTML.Window (Window)
@@ -36,18 +36,24 @@ result' = toIDBRequest >>> result
 
 foreign import createObjectStore :: String -> IDBDatabase -> Effect Unit
 
-foreign import data ReadOnly :: Type
-foreign import data ReadWrite :: Type
+newtype ReadOnly = ReadOnly String
+newtype ReadWrite = ReadWrite String
+
+instance showReadOnly :: Show ReadOnly where show (ReadOnly a) = a
+instance showReadWrite :: Show ReadWrite where show (ReadWrite a) = a
+
+readonly :: ReadOnly
+readonly = ReadOnly "readonly"
+
+readwrite :: ReadWrite
+readwrite = ReadWrite "readwrite"
 
 foreign import data IDBTransaction :: Type -> Type
 
-foreign import transaction :: forall a. String -> String -> IDBDatabase -> Effect (IDBTransaction a)
+foreign import transaction_ :: forall a. String -> String -> IDBDatabase -> Effect (IDBTransaction a)
 
-readTransaction :: String -> IDBDatabase -> Effect (IDBTransaction ReadOnly)
-readTransaction name db = transaction name "readonly" db
-
-writeTransaction :: String -> IDBDatabase -> Effect (IDBTransaction ReadWrite)
-writeTransaction name db = transaction name "readwrite" db
+transaction :: forall a. Show a => a -> String -> IDBDatabase -> Effect (IDBTransaction a)
+transaction mode = transaction_ $ show mode
 
 foreign import data IDBObjectStore :: Type -> Type
 

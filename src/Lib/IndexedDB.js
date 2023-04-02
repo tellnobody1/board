@@ -12,7 +12,7 @@ export const result = openRequest => () => openRequest.result
 
 export const createObjectStore = name => db => () => db.createObjectStore(name, { autoIncrement: true })
 
-export const transaction = name => mode => db => () => db.transaction(name, mode)
+export const transaction_ = mode => name => db => () => db.transaction(name, mode)
 
 export const objectStore = name => tx => () => tx.objectStore(name)
 
