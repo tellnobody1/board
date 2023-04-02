@@ -34,3 +34,9 @@
 .card-header {
   text-align: center;
 }
+
+.answers {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+}

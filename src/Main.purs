@@ -1,9 +1,10 @@
 module Main where
 
 import Api (Api(Post), Card, CardID, CardWithID, decode, encode)
-import Data.Array (take, drop, modifyAt, length, find, foldl, dropEnd, (:))
+import Data.Array (take, drop, modifyAt, length, find, foldl, dropEnd, singleton, snoc, (:))
 import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
+import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, fromJust)
 import Data.String.Common (joinWith, split)
@@ -23,10 +24,10 @@ import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, se
 import Lib.React (cn, onChange, createRoot)
 import Lib.React (render) as R
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, show, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=), (<=), (>), (&&))
+import Prelude (Unit, show, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=), (<=), (>), (&&), (>>>), (<<<))
 import Proto.Uint8Array (Uint8Array, newUint8Array)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
-import React.DOM (h1, button, div, input, text, span)
+import React.DOM (h1, button, div, input, text, span, ol, li)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
 import React.DOM.Props (Props) as R
 import Web.Event.EventTarget (addEventListener, eventListener)
@@ -53,8 +54,11 @@ type State =
   , cards :: Array CardWithID
   , question :: String
   , answer :: String
+  , answers :: Answers
   , nav :: Nav
   }
+
+type Answers = Map CardID (Array String)
 
 data Nav = EmptyView | ViewCards | ViewCard CardID
 
@@ -68,6 +72,7 @@ appClass = component "App" \this -> pure
     , cards: []
     , question: ""
     , answer: ""
+    , answers: Map.empty
     , nav: EmptyView
     }
   , render: render this
@@ -200,7 +205,7 @@ showCard this { cardID, card } =
   ] <> showImage card.background) $ showTitle card
 
 showComments :: This -> CardWithID -> Effect ReactElement
-showComments this { cardID: _, card } = do
+showComments this { cardID, card } = do
   state <- getState this
   pure $
     div []
@@ -214,10 +219,21 @@ showComments this { cardID: _, card } = do
       , button
         [ _type "button"
         , onClick \_ -> do
-            modifyState this _ { answer = "" }
+            modifyState this \s -> s { answers = Map.alter (case _ of
+              Just xs -> Just $ snoc xs s.answer
+              Nothing -> Just $ singleton s.answer) cardID s.answers, answer = "" }
         ] [ text $ state.t "post" ]
       ]
+    , ol [ cn "answers" ] $ showAnswer <$> answers state.answers
     ]
+
+  where
+
+  answers :: Answers -> Array String
+  answers = Map.lookup cardID >>> fromMaybe []
+
+  showAnswer :: String -> ReactElement
+  showAnswer = li [] <<< singleton <<< text
 
 showTitle :: Card -> Array ReactElement
 showTitle card = [ span [ cn "card-title" ] [ text card.title ] ]
