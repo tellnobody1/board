@@ -108,7 +108,9 @@ receiveCard this = do
   props <- getProps this
   onConnection props.peer \conn ->
     onOpen conn $ onData conn \x -> case decode x of
-      Right (Post cardWithID) -> modifyState this \s -> s { cards = cardWithID : s.cards }
+      Right (Post cardWithID) -> do
+        props.store.add x
+        modifyState this \s -> s { cards = cardWithID : s.cards }
       _ -> pure unit
 
 setLang :: This -> String -> Effect Unit
