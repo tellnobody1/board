@@ -12,17 +12,19 @@ import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
 import Lib.Affjax (getEff)
-import Lib.Crypto (crypto, randomUUID)
+import Lib.Array (from)
+import Lib.Crypto (crypto, randomUUID, getRandomValues)
 import Lib.Foreign (null)
 import Lib.History (pushState, replaceState, addPopstateListener, pathnames)
 import Lib.IndexedDB (IDBDatabase, add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, transaction, readonly, result, result', readwrite, getAllKeys, delete)
+import Lib.NetworkInformation (connection, downlink)
 import Lib.Ninjas (randomImage)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
 import Lib.React (cn, onChange, createRoot)
 import Lib.React (render) as R
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=))
-import Proto.Uint8Array (Uint8Array)
+import Prelude (Unit, show, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=), (<=), (>), (&&))
+import Proto.Uint8Array (Uint8Array, newUint8Array)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (h1, button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
@@ -33,7 +35,7 @@ import Web.HTML.Event.EventTypes (domcontentloaded)
 import Web.HTML.HTMLDocument (setTitle, readyState, body)
 import Web.HTML.HTMLDocument.ReadyState (ReadyState(..))
 import Web.HTML.HTMLElement (toElement)
-import Web.HTML.Window (document, toEventTarget)
+import Web.HTML.Window (document, navigator, toEventTarget)
 
 type Props =
   { peer :: Peer
@@ -125,8 +127,19 @@ fetchImages :: This -> Array CardWithID -> Effect Unit
 fetchImages this cards = void $ sequence $ mapWithIndex (\i _ -> fetchImage this $ length cards - i - 1) cards
 
 fetchImage :: This -> Int -> Effect Unit
-fetchImage this i = randomImage \url ->
-  modifyState this \s -> s { cards = fromMaybe s.cards (modifyAt i (\x -> x { card = x.card { image = Just url } }) s.cards) }
+fetchImage this i = do
+  speed <- downlink =<< connection =<< navigator =<< window
+  if i <= 2 && speed > 5.0 then do
+    randomImage \url -> setImage $ "url(" <> url <> ")"
+  else do
+    let xs = newUint8Array 3
+    getRandomValues xs =<< crypto =<< window
+    setImage $ "rgba(" <> joinWith ", " (show <$> from xs) <> ", 0.3)"
+
+  where
+
+  setImage :: String -> Effect Unit
+  setImage background = modifyState this \s -> s { cards = fromMaybe s.cards (modifyAt i (\x -> x { card = x.card { background = Just background } }) s.cards) }
 
 render :: This -> Effect ReactElement
 render this = do
@@ -163,7 +176,7 @@ showForm this = do
           props <- getProps this
           let peer = props.peer
           cardID <- randomUUID =<< crypto =<< window
-          let card = { title: state.question, image: Nothing }
+          let card = { title: state.question, background: Nothing }
           let cardWithID = { cardID, card }
           let encoded = encode $ Post cardWithID
           peers peer \ids -> void $ sequence $ ids <#> \id ->
@@ -184,7 +197,7 @@ showCard this { cardID, card } =
   div (
   [ cn "card card-link"
   , onClick \_ -> goToCard this cardID card
-  ] <> showImage card.image) $ showTitle card
+  ] <> showImage card.background) $ showTitle card
 
 showComments :: This -> CardWithID -> Effect ReactElement
 showComments this { cardID: _, card } = do
@@ -211,7 +224,7 @@ showTitle card = [ span [ cn "card-title" ] [ text card.title ] ]
 
 showImage :: Maybe String -> Array R.Props
 showImage Nothing = []
-showImage (Just url) = [ style { backgroundImage: "url("<>url<>")" } ]
+showImage (Just background) = [ style { background: background } ]
 
 main :: Effect Unit
 main = do

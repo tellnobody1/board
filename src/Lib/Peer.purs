@@ -11,7 +11,6 @@ import Effect.Aff (runAff_)
 import Prelude
 import Proto.Uint8Array (Uint8Array, fromArrayBuffer)
 import Simple.JSON (readJSON)
-import Control.Bind (composeKleisli)
 
 type ID = String
 type Host = String
@@ -40,7 +39,7 @@ foreign import onConnection :: Peer -> (Connection -> Effect Unit) -> Effect Uni
 foreign import onData_ :: Connection -> (ArrayBuffer -> Effect Unit) -> Effect Unit
 
 onData :: Connection -> (Data -> Effect Unit) -> Effect Unit
-onData c f = onData_ c $ composeKleisli fromArrayBuffer f
+onData c f = onData_ c $ fromArrayBuffer >>> f
 
 foreign import connect :: Peer -> ID -> Effect Connection
 

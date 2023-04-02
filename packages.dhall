@@ -5,5 +5,5 @@ in  upstream
   with protobuf =
     { dependencies = [ "integers", "arrays", "arraybuffer-types" ]
     , repo = "https://github.com/zero-deps/purescript-protobuf.git"
-    , version = "1.3.3"
+    , version = "1.3.4"
     }

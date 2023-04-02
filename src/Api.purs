@@ -15,7 +15,7 @@ type CardID = String
 
 type Card =
   { title :: String
-  , image :: Maybe String
+  , background :: Maybe String
   }
 
 type CardWithID = { cardID :: CardID, card :: Card }
@@ -53,7 +53,7 @@ decode _xs_ = do
     { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
     { val } <- tailRecM3 decodePost_ (pos + msglen) { cardID: Nothing, card: { title: Nothing } } pos
     case val of
-      { cardID: Just cardID, card: { title: Just title } } -> pure { cardID, card: { title, image: Nothing } }
+      { cardID: Just cardID, card: { title: Just title } } -> pure { cardID, card: { title, background: Nothing } }
       _ -> Left $ Decode.MissingFields "CardWithID"
       
   decodePost_ :: Int -> CardWithID' -> Int -> Decode.Result' (Step { a :: Int, b :: CardWithID', c :: Int } { pos :: Int, val :: CardWithID' })
