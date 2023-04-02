@@ -113,7 +113,7 @@ receiveCard this = do
 
 setLang :: This -> String -> Effect Unit
 setLang this lang = do
-  getEff ("langs/"<>lang<>".js") \v -> do
+  getEff ("/langs/"<>lang<>".js") \v -> do
     let keys = Map.fromFoldable $ split (Pattern "\n") v <#> split (Pattern "=") <#> \kv -> Tuple (joinWith "" $ take 1 kv) (joinWith "" $ drop 1 kv)
     modifyState this _ { lang = lang, t = \key -> fromMaybe key $ Map.lookup key keys }
 
