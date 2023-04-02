@@ -15,13 +15,14 @@ import Lib.Affjax (getEff)
 import Lib.Crypto (crypto, randomUUID)
 import Lib.Foreign (null)
 import Lib.History (pushState, replaceState, addPopstateListener, pathnames)
-import Lib.IndexedDB (IDBDatabase, indexedDB, onsuccess, open, result)
+import Lib.IndexedDB (add, createObjectStore, indexedDB, objectStore, onsuccess, onupgradeneeded, open, result, writeTransaction)
 import Lib.Ninjas (randomImage)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
 import Lib.React (cn, onChange, createRoot)
 import Lib.React (render) as R
 import Partial.Unsafe (unsafePartial)
 import Prelude (Unit, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=))
+import Proto.Uint8Array (Uint8Array)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
@@ -36,7 +37,11 @@ import Web.HTML.Window (document, toEventTarget)
 
 type Props =
   { peer :: Peer
-  , db :: IDBDatabase
+  , store :: Store
+  }
+
+type Store =
+  { add :: Uint8Array -> Effect Unit
   }
 
 type State =
@@ -151,8 +156,10 @@ showForm this = do
           cardID <- randomUUID =<< crypto =<< window
           let card = { title: state.question, image: Nothing }
           let cardWithID = { cardID, card }
+          let cardWithIDEncoded = encode $ Post cardWithID
           peers peer \ids -> void $ sequence $ ids <#> \id ->
-            connect peer id >>= \conn -> onOpen conn $ send conn $ encode $ Post cardWithID
+            connect peer id >>= \conn -> onOpen conn $ send conn cardWithIDEncoded
+          props.store.add cardWithIDEncoded
           modifyState this \s -> s { cards = cardWithID : s.cards, question = "" }
           fetchImage this 0
       ] [ text $ state'.t "post" ]
@@ -194,8 +201,12 @@ main = do
 renderClass :: Effect Unit
 renderClass = do
   dbreq <- open "board" =<< indexedDB =<< window
-  onsuccess dbreq $ do
+  onupgradeneeded dbreq $ createObjectStore "cards" =<< result dbreq
+  onsuccess dbreq do
     db <- result dbreq
+    let store =
+          { add: \x -> add x =<< objectStore "cards" =<< writeTransaction "cards" db
+          }
     peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
     root <- (body =<< document =<< window) <#> unsafePartial fromJust <#> toElement >>= createRoot
-    R.render root $ createLeafElement appClass { peer, db }
+    R.render root $ createLeafElement appClass { peer, store }
