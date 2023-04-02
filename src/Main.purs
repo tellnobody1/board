@@ -162,7 +162,7 @@ showCards this = do
 showCard :: This -> CardWithID -> ReactElement
 showCard this { cardID, card } =
   div (
-  [ cn "card"
+  [ cn "card pointer"
   , onClick \_ -> goToCard this cardID card
   ] <> showImage card.image) $ showTitle card
 
