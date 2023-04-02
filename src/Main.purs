@@ -24,7 +24,7 @@ import Partial.Unsafe (unsafePartial)
 import Prelude (Unit, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=))
 import Proto.Uint8Array (Uint8Array)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
-import React.DOM (button, div, input, text, span)
+import React.DOM (h1, button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
 import React.DOM.Props (Props) as R
 import Web.Event.EventTarget (addEventListener, eventListener)
@@ -50,6 +50,7 @@ type State =
   , t :: String -> String
   , cards :: Array CardWithID
   , question :: String
+  , answer :: String
   , nav :: Nav
   }
 
@@ -64,6 +65,7 @@ appClass = component "App" \this -> pure
     , t: identity
     , cards: []
     , question: ""
+    , answer: ""
     , nav: EmptyView
     }
   , render: render this
@@ -141,7 +143,7 @@ render this = do
         ]
     ViewCard cardID ->
       case find (\x -> x.cardID == cardID) state.cards of
-        Just card -> pure $ showCardAndComments this card
+        Just card -> showComments this card
         Nothing -> goHome this *> mempty
 
 showForm :: This -> Effect ReactElement
@@ -180,13 +182,29 @@ showCards this = do
 showCard :: This -> CardWithID -> ReactElement
 showCard this { cardID, card } =
   div (
-  [ cn "card pointer"
+  [ cn "card card-link"
   , onClick \_ -> goToCard this cardID card
   ] <> showImage card.image) $ showTitle card
 
-showCardAndComments :: This -> CardWithID -> ReactElement
-showCardAndComments _ { cardID: _, card } =
-  div ([ cn "card" ] <> showImage card.image) $ showTitle card
+showComments :: This -> CardWithID -> Effect ReactElement
+showComments this { cardID: _, card } = do
+  state <- getState this
+  pure $
+    div []
+    [ h1 [ cn "card-header" ] [ text card.title ]
+    , div [ cn "form" ]
+      [ input
+        [ _type "text", placeholder $ state.t "answer", autoFocus true
+        , value state.answer
+        , onChange \v -> modifyState this _ { answer = v }
+        ]
+      , button
+        [ _type "button"
+        , onClick \_ -> do
+            modifyState this _ { answer = "" }
+        ] [ text $ state.t "post" ]
+      ]
+    ]
 
 showTitle :: Card -> Array ReactElement
 showTitle card = [ span [ cn "card-title" ] [ text card.title ] ]

@@ -21,12 +21,16 @@
   border-radius: 0.5rem;
 }
 
-.pointer:hover {
-  cursor: pointer;
-}
-
 .card-title {
   background: white;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
+}
+
+.card-link:hover {
+  cursor: pointer;
+}
+
+.card-header {
+  text-align: center;
 }
