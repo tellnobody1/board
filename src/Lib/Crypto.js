@@ -1,5 +1,5 @@
 "use strict"
 
-export const crypto_ = () => crypto
+export const crypto = window => () => window.crypto
 
-export const randomUUID = crypto_ => () => crypto_.randomUUID()
+export const randomUUID = crypto => () => crypto.randomUUID()

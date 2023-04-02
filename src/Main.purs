@@ -144,7 +144,7 @@ showForm this = do
           state <- getState this
           props <- getProps this
           let peer = props.peer
-          cardID <- crypto >>= randomUUID
+          cardID <- randomUUID =<< crypto =<< window
           let card = { title: state.question, image: Nothing }
           let cardWithID = { cardID, card }
           peers peer \ids -> void $ sequence $ ids <#> \id ->

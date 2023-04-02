@@ -1,12 +1,10 @@
 module Lib.Crypto where
 
 import Effect (Effect)
+import Web.HTML.Window (Window)
 
 foreign import data Crypto :: Type
 
-foreign import crypto_ :: Effect Crypto
-
-crypto :: Effect Crypto
-crypto = crypto_
+foreign import crypto :: Window -> Effect Crypto
 
 foreign import randomUUID :: Crypto -> Effect String
