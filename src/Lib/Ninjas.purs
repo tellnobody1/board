@@ -1,12 +1,12 @@
 module Lib.Ninjas where
 
 import Affjax.RequestHeader (RequestHeader(..))
+import Control.Bind (composeKleisli)
 import Data.MediaType (MediaType(..))
 import Effect (Effect)
 import Lib.Affjax (getBlobEff)
 import Prelude
 import Web.File.Url (createObjectURL)
-import Control.Bind (composeKleisli)
 
 randomImage :: (String -> Effect Unit) -> Effect Unit
 randomImage f = getBlobEff imagePath imageHeaders $ composeKleisli createObjectURL f

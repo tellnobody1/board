@@ -1,6 +1,7 @@
 module Lib.IndexedDB where
 
 import Effect (Effect)
+import Foreign (Foreign)
 import Prelude (Unit, (>>>))
 import Proto.Uint8Array (Uint8Array)
 import Unsafe.Coerce (unsafeCoerce)
@@ -55,3 +56,12 @@ foreign import objectStore :: forall a. String -> IDBTransaction a -> Effect (ID
 foreign import add :: Uint8Array -> IDBObjectStore ReadWrite -> Effect Unit
 
 foreign import getAll :: IDBObjectStore ReadOnly -> Effect (IDBRequest (Array Uint8Array))
+
+newtype Key = Key Foreign
+
+foreign import getAllKeys :: IDBObjectStore ReadOnly -> Effect (IDBRequest (Array Key))
+
+foreign import delete_ :: IDBObjectStore ReadWrite -> Key -> Effect Unit
+
+delete :: IDBObjectStore ReadWrite -> Key -> Effect Unit
+delete = delete_

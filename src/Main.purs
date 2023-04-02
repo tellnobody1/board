@@ -1,7 +1,7 @@
 module Main where
 
 import Api (Api(Post), Card, CardID, CardWithID, decode, encode)
-import Data.Array (take, drop, modifyAt, length, find, foldl, (:))
+import Data.Array (take, drop, modifyAt, length, find, foldl, dropEnd, (:))
 import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
@@ -15,7 +15,7 @@ import Lib.Affjax (getEff)
 import Lib.Crypto (crypto, randomUUID)
 import Lib.Foreign (null)
 import Lib.History (pushState, replaceState, addPopstateListener, pathnames)
-import Lib.IndexedDB (add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, readTransaction, result, result', writeTransaction)
+import Lib.IndexedDB (IDBDatabase, add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, readTransaction, result, result', writeTransaction, getAllKeys, delete)
 import Lib.Ninjas (randomImage)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
 import Lib.React (cn, onChange, createRoot)
@@ -229,6 +229,7 @@ renderClass = do
   onupgradeneeded openReq $ createObjectStore "cards" =<< result' openReq
   onsuccess' openReq do
     db <- result' openReq
+    purgeCards db
     let store =
           { add: \x -> add x =<< objectStore "cards" =<< writeTransaction "cards" db
           , all: \f -> do
@@ -242,3 +243,11 @@ renderClass = do
     peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
     root <- (body =<< document =<< window) <#> unsafePartial fromJust <#> toElement >>= createRoot
     R.render root $ createLeafElement appClass { peer, store }
+
+purgeCards :: IDBDatabase -> Effect Unit
+purgeCards db = do
+  keys <- getAllKeys =<< objectStore "cards" =<< readTransaction "cards" db
+  onsuccess keys do
+    xs <- result keys <#> dropEnd 100
+    writeStore <- objectStore "cards" =<< writeTransaction "cards" db
+    void $ sequence $ delete writeStore <$> xs
