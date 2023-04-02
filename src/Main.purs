@@ -15,12 +15,13 @@ import Lib.Affjax (getEff)
 import Lib.Crypto (crypto, randomUUID)
 import Lib.Foreign (null)
 import Lib.History (pushState, replaceState, addPopstateListener, pathnames)
+import Lib.IndexedDB (IDBDatabase, indexedDB, onsuccess, open, result)
 import Lib.Ninjas (randomImage)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
-import Lib.React (render) as R
 import Lib.React (cn, onChange, createRoot)
+import Lib.React (render) as R
 import Partial.Unsafe (unsafePartial)
-import Prelude hiding (div)
+import Prelude (Unit, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=))
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (button, div, input, text, span)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
@@ -33,7 +34,10 @@ import Web.HTML.HTMLDocument.ReadyState (ReadyState(..))
 import Web.HTML.HTMLElement (toElement)
 import Web.HTML.Window (document, toEventTarget)
 
-type Props = { peer :: Peer }
+type Props =
+  { peer :: Peer
+  , db :: IDBDatabase
+  }
 
 type State =
   { lang :: String
@@ -189,6 +193,9 @@ main = do
 
 renderClass :: Effect Unit
 renderClass = do
-  peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
-  root <- (body =<< document =<< window) <#> unsafePartial fromJust <#> toElement >>= createRoot
-  R.render root $ createLeafElement appClass { peer }
+  dbreq <- open "board" =<< indexedDB =<< window
+  onsuccess dbreq $ do
+    db <- result dbreq
+    peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
+    root <- (body =<< document =<< window) <#> unsafePartial fromJust <#> toElement >>= createRoot
+    R.render root $ createLeafElement appClass { peer, db }
