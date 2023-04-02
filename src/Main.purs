@@ -1,7 +1,7 @@
 module Main where
 
 import Api (Api(Post), Card, CardID, CardWithID, decode, encode)
-import Data.Array (take, drop, modifyAt, length, find, (:))
+import Data.Array (take, drop, modifyAt, length, find, foldl, (:))
 import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
@@ -15,7 +15,7 @@ import Lib.Affjax (getEff)
 import Lib.Crypto (crypto, randomUUID)
 import Lib.Foreign (null)
 import Lib.History (pushState, replaceState, addPopstateListener, pathnames)
-import Lib.IndexedDB (add, createObjectStore, indexedDB, objectStore, onsuccess, onupgradeneeded, open, result, writeTransaction)
+import Lib.IndexedDB (add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, readTransaction, result, result', writeTransaction)
 import Lib.Ninjas (randomImage)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
 import Lib.React (cn, onChange, createRoot)
@@ -42,6 +42,7 @@ type Props =
 
 type Store =
   { add :: Uint8Array -> Effect Unit
+  , all :: (Array CardWithID -> Effect Unit) -> Effect Unit
   }
 
 type State =
@@ -64,13 +65,12 @@ appClass = component "App" \this -> pure
     , cards: []
     , question: ""
     , nav: EmptyView
-    } :: State
+    }
   , render: render this
   , componentDidMount: do
       setLang this "uk"
       addPopstateListener' this
       receiveCard this
-      fetchImages this
       restoreState this
   }
 
@@ -90,10 +90,18 @@ addPopstateListener' this = addPopstateListener $ case _ of
   Right cardID -> modifyState this _ { nav = ViewCard cardID }
   _ -> modifyState this _ { nav = ViewCards }
 
-restoreState :: This -> Effect Unit
-restoreState this = pathnames >>= case _ of
+restoreNav :: This -> Effect Unit
+restoreNav this = pathnames >>= case _ of
   [ "post", cardID ] -> modifyState this _ { nav = ViewCard cardID }
   _ -> goHome this
+
+restoreState :: This -> Effect Unit
+restoreState this = do
+  props <- getProps this
+  props.store.all \cards -> do
+    modifyState this _ { cards = cards }
+    restoreNav this
+    fetchImages this cards
 
 receiveCard :: This -> Effect Unit
 receiveCard this = do
@@ -109,11 +117,8 @@ setLang this lang = do
     let keys = Map.fromFoldable $ split (Pattern "\n") v <#> split (Pattern "=") <#> \kv -> Tuple (joinWith "" $ take 1 kv) (joinWith "" $ drop 1 kv)
     modifyState this _ { lang = lang, t = \key -> fromMaybe key $ Map.lookup key keys }
 
-fetchImages :: This -> Effect Unit
-fetchImages this = do
-  state <- getState this
-  let cards = state.cards
-  void $ sequence $ mapWithIndex (\i _ -> fetchImage this $ length cards - i - 1) cards
+fetchImages :: This -> Array CardWithID -> Effect Unit
+fetchImages this cards = void $ sequence $ mapWithIndex (\i _ -> fetchImage this $ length cards - i - 1) cards
 
 fetchImage :: This -> Int -> Effect Unit
 fetchImage this i = randomImage \url ->
@@ -156,10 +161,10 @@ showForm this = do
           cardID <- randomUUID =<< crypto =<< window
           let card = { title: state.question, image: Nothing }
           let cardWithID = { cardID, card }
-          let cardWithIDEncoded = encode $ Post cardWithID
+          let encoded = encode $ Post cardWithID
           peers peer \ids -> void $ sequence $ ids <#> \id ->
-            connect peer id >>= \conn -> onOpen conn $ send conn cardWithIDEncoded
-          props.store.add cardWithIDEncoded
+            connect peer id >>= \conn -> onOpen conn $ send conn encoded
+          props.store.add encoded
           modifyState this \s -> s { cards = cardWithID : s.cards, question = "" }
           fetchImage this 0
       ] [ text $ state'.t "post" ]
@@ -200,12 +205,19 @@ main = do
 
 renderClass :: Effect Unit
 renderClass = do
-  dbreq <- open "board" =<< indexedDB =<< window
-  onupgradeneeded dbreq $ createObjectStore "cards" =<< result dbreq
-  onsuccess dbreq do
-    db <- result dbreq
+  openReq <- open "board" =<< indexedDB =<< window
+  onupgradeneeded openReq $ createObjectStore "cards" =<< result' openReq
+  onsuccess' openReq do
+    db <- result' openReq
     let store =
           { add: \x -> add x =<< objectStore "cards" =<< writeTransaction "cards" db
+          , all: \f -> do
+              readReq <- getAll =<< objectStore "cards" =<< readTransaction "cards" db
+              onsuccess readReq do
+                xs <- result readReq
+                f $ foldl (\acc x -> case decode x of
+                      Right (Post a) -> a : acc
+                      _ -> acc) [] xs
           }
     peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
     root <- (body =<< document =<< window) <#> unsafePartial fromJust <#> toElement >>= createRoot

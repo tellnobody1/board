@@ -17,3 +17,5 @@ export const transaction = name => mode => db => () => db.transaction(name, mode
 export const objectStore = name => tx => () => tx.objectStore(name)
 
 export const add = value => store => () => store.add(value)
+
+export const getAll = store => () => store.getAll()
