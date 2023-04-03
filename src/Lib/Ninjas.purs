@@ -8,11 +8,11 @@ import Lib.Affjax (getBlobEff)
 import Prelude
 import Web.File.Url (createObjectURL)
 
-randomImage :: (String -> Effect Unit) -> Effect Unit
-randomImage f = getBlobEff imagePath imageHeaders $ composeKleisli createObjectURL f
+randomImage :: Int -> (String -> Effect Unit) -> Effect Unit
+randomImage i f = getBlobEff (imagePath <> show i) imageHeaders $ composeKleisli createObjectURL f
 
 imagePath :: String
-imagePath = "https://api.api-ninjas.com/v1/randomimage?category=nature&width=500&height=375"
+imagePath = "https://api.api-ninjas.com/v1/randomimage?category=nature&width=400&height=300"
 
 imageHeaders :: Array RequestHeader
 imageHeaders =

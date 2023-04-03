@@ -18,7 +18,7 @@ import Lib.Crypto (crypto, randomUUID, getRandomValues)
 import Lib.Foreign (null)
 import Lib.History (pushState, replaceState, addPopstateListener, pathnames)
 import Lib.IndexedDB (IDBDatabase, add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, transaction, readonly, result, result', readwrite, getAllKeys, delete)
-import Lib.NetworkInformation (connection, downlink)
+import Lib.NetworkInformation (connection, downlink, hasConnection)
 import Lib.Ninjas (randomImage)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
 import Lib.React (cn, onChange, createRoot)
@@ -133,9 +133,12 @@ fetchImages this cards = void $ sequence $ mapWithIndex (\i _ -> fetchImage this
 
 fetchImage :: This -> Int -> Effect Unit
 fetchImage this i = do
-  speed <- downlink =<< connection =<< navigator =<< window
+  navigator <- navigator =<< window
+  speed <- hasConnection navigator >>= case _ of
+    true -> downlink =<< connection navigator
+    false -> pure 100.0
   if i <= 2 && speed > 5.0 then do
-    randomImage \url -> setImage $ "url(" <> url <> ")"
+    randomImage i \url -> setImage $ "url(" <> url <> ")"
   else do
     let xs = newUint8Array 3
     getRandomValues xs =<< crypto =<< window

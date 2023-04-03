@@ -1,15 +1,15 @@
-cloc|github.com/AlDanial/cloc v 1.96  T=0.01 s (2853.0 files/s, 86969.1 lines/s)
+cloc|github.com/AlDanial/cloc v 1.96  T=0.01 s (2290.8 files/s, 70424.8 lines/s)
 --- | ---
 
 Language|files|blank|comment|code
 :-------|-------:|-------:|-------:|-------:
-PureScript|12|123|0|530
-JavaScript|11|32|32|67
+PureScript|12|124|0|534
+JavaScript|11|33|32|68
 dhall|2|1|0|44
-CSS|1|6|0|36
+CSS|1|6|0|37
 Markdown|2|8|0|31
 HTML|1|0|0|16
 JSON|1|0|0|10
 PHP|1|0|0|9
 --------|--------|--------|--------|--------
-SUM:|31|170|32|743
+SUM:|31|172|32|749
