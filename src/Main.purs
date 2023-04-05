@@ -1,7 +1,7 @@
 module Main where
 
-import Api (Api(Post), Card, CardID, CardWithID, decode, encode)
-import Data.Array (take, drop, modifyAt, length, find, foldl, dropEnd, singleton, snoc, (:))
+import Api (Api(Question, Answer), Card, CardID, CardWithID, Answer, decode, encode)
+import Data.Array (take, drop, modifyAt, length, find, foldl, dropEnd, singleton, (:))
 import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map (Map)
@@ -117,9 +117,13 @@ receiveCard this = do
   props <- getProps this
   onConnection props.peer \conn ->
     onOpen conn $ onData conn \x -> case decode x of
-      Right (Post cardWithID) -> do
+      Right (Question cardWithID) -> do
         props.store.add x
         modifyState this \s -> s { cards = cardWithID : s.cards }
+        fetchImage this 0
+      Right (Answer { cardID, answer }) -> do
+        --todo store
+        modifyState this \s -> s { answers = addAnswers s.answers cardID answer }
       _ -> pure unit
 
 setLang :: This -> String -> Effect Unit
@@ -148,6 +152,14 @@ fetchImage this i = do
 
   setImage :: String -> Effect Unit
   setImage background = modifyState this \s -> s { cards = fromMaybe s.cards (modifyAt i (\x -> x { card = x.card { background = Just background } }) s.cards) }
+
+addAnswers :: Answers -> CardID -> Answer -> Answers
+addAnswers answers cardID answer = Map.alter (case _ of
+  Just xs -> Just $ answer : xs
+  Nothing -> Just $ singleton answer) cardID answers
+
+broadcast :: Peer -> Uint8Array -> Effect Unit
+broadcast peer msg = peers peer \ids -> void $ sequence $ ids <#> \id -> connect peer id >>= \conn -> onOpen conn $ send conn msg
 
 render :: This -> Effect ReactElement
 render this = do
@@ -182,13 +194,11 @@ showForm this = do
       , onClick \_ -> do
           state <- getState this
           props <- getProps this
-          let peer = props.peer
           cardID <- randomUUID =<< crypto =<< window
           let card = { title: state.question, background: Nothing }
           let cardWithID = { cardID, card }
-          let encoded = encode $ Post cardWithID
-          peers peer \ids -> void $ sequence $ ids <#> \id ->
-            connect peer id >>= \conn -> onOpen conn $ send conn encoded
+          let encoded = encode $ Question cardWithID
+          broadcast props.peer encoded
           props.store.add encoded
           modifyState this \s -> s { cards = cardWithID : s.cards, question = "" }
           fetchImage this 0
@@ -209,25 +219,29 @@ showCard this { cardID, card } =
 
 showComments :: This -> CardWithID -> Effect ReactElement
 showComments this { cardID, card } = do
-  state <- getState this
+  state' <- getState this
   pure $
     div []
     [ h1 [ cn "card-header" ] [ text card.title ]
     , div [ cn "form" ]
       [ input
-        [ _type "text", placeholder $ state.t "answer", autoFocus true
-        , value state.answer
+        [ _type "text", placeholder $ state'.t "answer", autoFocus true
+        , value state'.answer
         , onChange \v -> modifyState this _ { answer = v }
         ]
       , button
         [ _type "button"
         , onClick \_ -> do
-            modifyState this \s -> s { answers = Map.alter (case _ of
-              Just xs -> Just $ snoc xs s.answer
-              Nothing -> Just $ singleton s.answer) cardID s.answers, answer = "" }
-        ] [ text $ state.t "post" ]
+            state <- getState this
+            props <- getProps this
+            let answer = state.answer
+            let encoded = encode $ Answer { cardID, answer }
+            broadcast props.peer encoded
+            --todo store
+            modifyState this _ { answers = addAnswers state.answers cardID answer, answer = "" }
+        ] [ text $ state'.t "post" ]
       ]
-    , ol [ cn "answers" ] $ showAnswer <$> answers state.answers
+    , ol [ cn "answers" ] $ showAnswer <$> answers state'.answers
     ]
 
   where
@@ -269,7 +283,7 @@ renderClass = do
               onsuccess readReq do
                 xs <- result readReq
                 f $ foldl (\acc x -> case decode x of
-                      Right (Post a) -> a : acc
+                      Right (Question a) -> a : acc
                       _ -> acc) [] xs
           }
     peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
