@@ -18,9 +18,12 @@ foreign import data IDBOpenDBRequest :: Type -> Type
 toIDBRequest :: forall a. IDBOpenDBRequest a -> IDBRequest a
 toIDBRequest = unsafeCoerce
 
-foreign import open :: String -> IDBFactory -> Effect (IDBOpenDBRequest IDBDatabase)
+type Name = String
+type Version = Int
 
-foreign import onupgradeneeded :: IDBOpenDBRequest IDBDatabase -> Effect Unit -> Effect Unit
+foreign import open :: Name -> Version -> IDBFactory -> Effect (IDBOpenDBRequest IDBDatabase)
+
+foreign import onupgradeneeded :: IDBOpenDBRequest IDBDatabase -> (Version -> Effect Unit) -> Effect Unit
 
 foreign import onsuccess :: forall a. IDBRequest a -> Effect Unit -> Effect Unit
 
@@ -34,7 +37,9 @@ foreign import result :: forall a. IDBRequest a -> Effect a
 result' :: forall a. IDBOpenDBRequest a -> Effect a
 result' = toIDBRequest >>> result
 
-foreign import createObjectStore :: String -> IDBDatabase -> Effect Unit
+foreign import createObjectStore :: Name -> IDBDatabase -> Effect Unit
+
+foreign import deleteObjectStore :: Name -> IDBDatabase -> Effect Unit
 
 newtype ReadOnly = ReadOnly String
 newtype ReadWrite = ReadWrite String
@@ -50,14 +55,16 @@ readwrite = ReadWrite "readwrite"
 
 foreign import data IDBTransaction :: Type -> Type
 
-foreign import transaction_ :: forall a. String -> String -> IDBDatabase -> Effect (IDBTransaction a)
+type Mode = String
+
+foreign import transaction_ :: forall a. Mode -> Name -> IDBDatabase -> Effect (IDBTransaction a)
 
 transaction :: forall a. Show a => a -> String -> IDBDatabase -> Effect (IDBTransaction a)
 transaction mode = transaction_ $ show mode
 
 foreign import data IDBObjectStore :: Type -> Type
 
-foreign import objectStore :: forall a. String -> IDBTransaction a -> Effect (IDBObjectStore a)
+foreign import objectStore :: forall a. Name -> IDBTransaction a -> Effect (IDBObjectStore a)
 
 foreign import add :: Uint8Array -> IDBObjectStore ReadWrite -> Effect Unit
 

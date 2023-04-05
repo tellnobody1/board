@@ -1,7 +1,7 @@
 module Main where
 
 import Api (Api(Question, Answer), Card, CardID, CardWithID, Answer, decode, encode)
-import Data.Array (take, drop, modifyAt, length, find, foldl, dropEnd, singleton, (:))
+import Data.Array (take, drop, modifyAt, length, find, foldl, foldr, dropEnd, singleton, (:))
 import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map (Map)
@@ -17,7 +17,7 @@ import Lib.Array (from)
 import Lib.Crypto (crypto, randomUUID, getRandomValues)
 import Lib.Foreign (null)
 import Lib.History (pushState, replaceState, addPopstateListener, pathnames)
-import Lib.IndexedDB (IDBDatabase, add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, transaction, readonly, result, result', readwrite, getAllKeys, delete)
+import Lib.IndexedDB (IDBDatabase, add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, transaction, readonly, result, result', readwrite, getAllKeys, delete, deleteObjectStore)
 import Lib.NetworkInformation (connection, downlink, hasConnection)
 import Lib.Ninjas (randomImage)
 import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, send)
@@ -43,9 +43,11 @@ type Props =
   , store :: Store
   }
 
+type Feed = String
+
 type Store =
-  { add :: Uint8Array -> Effect Unit
-  , all :: (Array CardWithID -> Effect Unit) -> Effect Unit
+  { add :: Feed -> Uint8Array -> Effect Unit
+  , all :: Feed -> (Array Api -> Effect Unit) -> Effect Unit
   }
 
 type State =
@@ -107,10 +109,18 @@ restoreNav this = pathnames >>= case _ of
 restoreState :: This -> Effect Unit
 restoreState this = do
   props <- getProps this
-  props.store.all \cards -> do
+  props.store.all "questions" \xs -> do
+    let cards = foldl (\acc -> case _ of
+          Question a -> a : acc
+          _ -> acc) [] xs
     modifyState this _ { cards = cards }
     restoreNav this
     fetchImages this cards
+  props.store.all "answers" \xs -> do
+    let answers = foldl (\acc -> case _ of
+          Answer { cardID, answer } -> addAnswers acc cardID answer
+          _ -> acc) Map.empty xs
+    modifyState this _ { answers = answers }
 
 receiveCard :: This -> Effect Unit
 receiveCard this = do
@@ -118,11 +128,11 @@ receiveCard this = do
   onConnection props.peer \conn ->
     onOpen conn $ onData conn \x -> case decode x of
       Right (Question cardWithID) -> do
-        props.store.add x
+        props.store.add "questions" x
         modifyState this \s -> s { cards = cardWithID : s.cards }
         fetchImage this 0
       Right (Answer { cardID, answer }) -> do
-        --todo store
+        props.store.add "answers" x
         modifyState this \s -> s { answers = addAnswers s.answers cardID answer }
       _ -> pure unit
 
@@ -199,7 +209,7 @@ showForm this = do
           let cardWithID = { cardID, card }
           let encoded = encode $ Question cardWithID
           broadcast props.peer encoded
-          props.store.add encoded
+          props.store.add "questions" encoded
           modifyState this \s -> s { cards = cardWithID : s.cards, question = "" }
           fetchImage this 0
       ] [ text $ state'.t "post" ]
@@ -237,7 +247,7 @@ showComments this { cardID, card } = do
             let answer = state.answer
             let encoded = encode $ Answer { cardID, answer }
             broadcast props.peer encoded
-            --todo store
+            props.store.add "answers" encoded
             modifyState this _ { answers = addAnswers state.answers cardID answer, answer = "" }
         ] [ text $ state'.t "post" ]
       ]
@@ -271,20 +281,24 @@ main = do
 
 renderClass :: Effect Unit
 renderClass = do
-  openReq <- open "board" =<< indexedDB =<< window
-  onupgradeneeded openReq $ createObjectStore "cards" =<< result' openReq
+  openReq <- open "board" 2 =<< indexedDB =<< window
+  onupgradeneeded openReq \version -> do
+    res <- result' openReq
+    if version == 1 then deleteObjectStore "cards" res else pure unit
+    createObjectStore "questions" =<< result' openReq
+    createObjectStore "answers" =<< result' openReq
   onsuccess' openReq do
     db <- result' openReq
     purgeCards db
     let store =
-          { add: \x -> add x =<< objectStore "cards" =<< transaction readwrite "cards" db
-          , all: \f -> do
-              readReq <- getAll =<< objectStore "cards" =<< transaction readonly "cards" db
+          { add: \feed x -> add x =<< objectStore feed =<< transaction readwrite feed db
+          , all: \feed f -> do
+              readReq <- getAll =<< objectStore feed =<< transaction readonly feed db
               onsuccess readReq do
                 xs <- result readReq
-                f $ foldl (\acc x -> case decode x of
-                      Right (Question a) -> a : acc
-                      _ -> acc) [] xs
+                f $ foldr (decode >>> case _ of
+                  Right a -> (:) a
+                  _ -> identity) [] xs
           }
     peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
     root <- (body =<< document =<< window) <#> unsafePartial fromJust <#> toElement >>= createRoot
@@ -292,8 +306,8 @@ renderClass = do
 
 purgeCards :: IDBDatabase -> Effect Unit
 purgeCards db = do
-  keys <- getAllKeys =<< objectStore "cards" =<< transaction readonly "cards" db
+  keys <- getAllKeys =<< objectStore "questions" =<< transaction readonly "questions" db
   onsuccess keys do
     xs <- result keys <#> dropEnd 100
-    writeStore <- objectStore "cards" =<< transaction readwrite "cards" db
+    writeStore <- objectStore "questions" =<< transaction readwrite "questions" db
     void $ sequence $ delete writeStore <$> xs

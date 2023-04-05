@@ -2,15 +2,17 @@
 
 export const indexedDB = window => () => window.indexedDB
 
-export const open = name => factory => () => factory.open(name)
+export const open = name => version => factory => () => factory.open(name, version)
 
-export const onupgradeneeded = openRequest => f => () => openRequest.onupgradeneeded = f
+export const onupgradeneeded = openRequest => f => () => openRequest.onupgradeneeded = event => f(event.oldVersion)()
 
 export const onsuccess = openRequest => f => () => openRequest.onsuccess = f
 
 export const result = openRequest => () => openRequest.result
 
 export const createObjectStore = name => db => () => db.createObjectStore(name, { autoIncrement: true })
+
+export const deleteObjectStore = name => db => () => db.deleteObjectStore(name)
 
 export const transaction_ = mode => name => db => () => db.transaction(name, mode)
 
