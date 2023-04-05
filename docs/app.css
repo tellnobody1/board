@@ -42,3 +42,13 @@
   align-items: center;
   list-style-type: square;
 }
+
+@media (prefers-color-scheme: dark) {
+  body, .card-title, .form > input, .form > button {
+    background: black;
+  }
+  .card-title, .card-header, .answers, .form > input, .form > button {
+    color: white;
+  }
+}
+

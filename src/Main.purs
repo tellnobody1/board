@@ -24,7 +24,7 @@ import Lib.Peer (Peer, newPeer, onConnection, onOpen, onData, peers, connect, se
 import Lib.React (cn, onChange, createRoot)
 import Lib.React (render) as R
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, show, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=), (<=), (>), (&&), (>>>), (<<<))
+import Prelude (Unit, show, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=), (<=), (>), (&&), (>>>), (<<<), (/=))
 import Proto.Uint8Array (Uint8Array, newUint8Array)
 import React (ReactClass, ReactElement, ReactThis, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (h1, button, div, input, text, span, ol, li)
@@ -203,15 +203,18 @@ showForm this = do
       [ _type "button"
       , onClick \_ -> do
           state <- getState this
-          props <- getProps this
-          cardID <- randomUUID =<< crypto =<< window
-          let card = { title: state.question, background: Nothing }
-          let cardWithID = { cardID, card }
-          let encoded = encode $ Question cardWithID
-          broadcast props.peer encoded
-          props.store.add "questions" encoded
-          modifyState this \s -> s { cards = cardWithID : s.cards, question = "" }
-          fetchImage this 0
+          let question = state.question
+          if question /= "" then do
+            props <- getProps this
+            cardID <- randomUUID =<< crypto =<< window
+            let card = { title: question, background: Nothing }
+            let cardWithID = { cardID, card }
+            let encoded = encode $ Question cardWithID
+            broadcast props.peer encoded
+            props.store.add "questions" encoded
+            modifyState this \s -> s { cards = cardWithID : s.cards, question = "" }
+            fetchImage this 0
+          else pure unit
       ] [ text $ state'.t "post" ]
     ]
 
@@ -243,12 +246,14 @@ showComments this { cardID, card } = do
         [ _type "button"
         , onClick \_ -> do
             state <- getState this
-            props <- getProps this
             let answer = state.answer
-            let encoded = encode $ Answer { cardID, answer }
-            broadcast props.peer encoded
-            props.store.add "answers" encoded
-            modifyState this _ { answers = addAnswers state.answers cardID answer, answer = "" }
+            if answer /= "" then do
+              props <- getProps this
+              let encoded = encode $ Answer { cardID, answer }
+              broadcast props.peer encoded
+              props.store.add "answers" encoded
+              modifyState this _ { answers = addAnswers state.answers cardID answer, answer = "" }
+            else pure unit
         ] [ text $ state'.t "post" ]
       ]
     , ol [ cn "answers" ] $ showAnswer <$> answers state'.answers
