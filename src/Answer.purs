@@ -1,6 +1,6 @@
 module Answer where
 
-import Api (Answer, Api(Answer), QuestionID, QuestionCardWithID, encode)
+import Api (encode)
 import Data.Array (singleton, (:))
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -11,7 +11,7 @@ import Prelude (bind, discard, pure, unit, ($), (/=), (<$>), (<<<), (>>>))
 import React (ReactElement, getProps, getState, modifyState)
 import React.DOM (h1, button, div, input, text, ol, li)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, value)
-import Types
+import Types (Answer, Answers, Api(..), QuestionCardWithID, QuestionID, This)
 
 answersPage :: This -> QuestionCardWithID -> Effect ReactElement
 answersPage this { questionID, questionCard: { title } } = do

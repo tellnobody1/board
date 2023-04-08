@@ -1,7 +1,7 @@
 module Main where
 
 import Answer (addAnswers, answersPage)
-import Api (Api(Answer, Question), QuestionCardWithID, decode)
+import Api (decode)
 import Data.Array (drop, dropEnd, find, foldl, foldr, length, take, (:))
 import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
@@ -23,7 +23,7 @@ import Prelude (Unit, bind, discard, identity, mempty, pure, unit, void, ($), (*
 import Question (questionForm, fetchImage, questionCards)
 import React (ReactClass, ReactElement, component, createLeafElement, getProps, getState, modifyState)
 import React.DOM (div)
-import Types
+import Types (Api(..), Nav(..), Props, QuestionCardWithID, This)
 import Web.Event.EventTarget (addEventListener, eventListener)
 import Web.HTML (window)
 import Web.HTML.Event.EventTypes (domcontentloaded)

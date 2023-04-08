@@ -8,25 +8,13 @@ import Prelude (map, bind, pure, (+), (<), ($), (<$>))
 import Proto.Decode as Decode
 import Proto.Encode as Encode
 import Proto.Uint8Array (Uint8Array, length, concatAll)
+import Types
 
-data Api = Question QuestionCardWithID | Answer AnswerWithID
-
-type QuestionID = String
 type QuestionID' = Maybe String
-
-type QuestionCard =
-  { title :: String
-  , background :: Maybe String
-  }
-type QuestionCard' =
-  { title :: Maybe String
-  }
-type QuestionCardWithID = { questionID :: QuestionID, questionCard :: QuestionCard }
+type QuestionCard' = { title :: Maybe String }
 type QuestionCardWithID' = { questionID :: QuestionID', questionCard :: QuestionCard' }
 
-type Answer = String
 type Answer' = Maybe String
-type AnswerWithID = { questionID :: QuestionID, answer :: Answer }
 type AnswerWithID' = { questionID :: QuestionID', answer :: Answer' }
 
 encode :: Api -> Uint8Array

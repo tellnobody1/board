@@ -1,7 +1,7 @@
 module Types where
 
-import Api (Api, QuestionID, QuestionCardWithID)
 import Data.Map (Map)
+import Data.Maybe (Maybe(Just, Nothing))
 import Effect (Effect)
 import Lib.Peer (Peer)
 import Prelude (Unit)
@@ -34,4 +34,25 @@ type Store =
 
 type Feed = String
 
+type QuestionID = String
+
+type QuestionCard =
+  { title :: String
+  , background :: Maybe String
+  }
+
+type QuestionCardWithID =
+  { questionID :: QuestionID
+  , questionCard :: QuestionCard
+  }
+
+type Answer = String
+
+type AnswerWithID =
+  { questionID :: QuestionID
+  , answer :: Answer
+  }
+
 type Answers = Map QuestionID (Array String)
+
+data Api = Question QuestionCardWithID | Answer AnswerWithID

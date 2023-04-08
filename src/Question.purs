@@ -1,6 +1,6 @@
 module Question where
 
-import Api (Api(Question), QuestionCardWithID, encode)
+import Api (encode)
 import Data.Array (modifyAt, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String.Common (joinWith)
@@ -18,7 +18,7 @@ import React (ReactElement, getProps, getState, modifyState)
 import React.DOM (button, div, input, span, text)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, style, value)
 import React.DOM.Props (Props) as R
-import Types
+import Types (Api(..), Nav(..), QuestionCardWithID, This)
 import Web.HTML (window)
 import Web.HTML.HTMLDocument (setTitle)
 import Web.HTML.Window (document, navigator)
