@@ -6,6 +6,7 @@ import Affjax.Web (get)
 import Data.Array (filter)
 import Data.ArrayBuffer.Types (ArrayBuffer)
 import Data.Either (Either(Left, Right))
+import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Prelude
@@ -62,3 +63,6 @@ peersUrl :: Peer -> String
 peersUrl peer = do
   let opt = peer.options
   "https://" <> opt.host <> ":" <> (show opt.port) <> opt.path <> "peerjs/peers"
+
+broadcast :: Peer -> Uint8Array -> Effect Unit
+broadcast peer msg = peers peer \ids -> void $ sequence $ ids <#> \id -> connect peer id >>= \conn -> onOpen conn $ send conn msg
