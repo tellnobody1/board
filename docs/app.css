@@ -3,7 +3,7 @@
   justify-content: center;
 }
 
-.cards {
+.questions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -11,7 +11,7 @@
   margin-top: 0.75rem;
 }
 
-.card {
+.question {
   width: 400px;
   height: 300px;
   display: flex;
@@ -21,18 +21,18 @@
   border-radius: 0.5rem;
 }
 
-.card-title {
+.question-title {
   background: white;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   margin: 3rem;
 }
 
-.card-link:hover {
+.question-link:hover {
   cursor: pointer;
 }
 
-.card-header {
+.question-header {
   text-align: center;
 }
 
@@ -44,10 +44,10 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  body, .card-title, .form > input, .form > button {
+  body, .question-title, .form > input, .form > button {
     background: black;
   }
-  .card-title, .card-header, .answers, .form > input, .form > button {
+  .question-title, .question-header, .answers, .form > input, .form > button {
     color: white;
   }
 }

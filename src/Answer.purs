@@ -1,6 +1,6 @@
 module Answer where
 
-import Api (Answer, Api(Answer), CardID, CardWithID, encode)
+import Api (Answer, Api(Answer), QuestionID, QuestionCardWithID, encode)
 import Data.Array (singleton, (:))
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -13,12 +13,12 @@ import React.DOM (h1, button, div, input, text, ol, li)
 import React.DOM.Props (_type, autoFocus, onClick, placeholder, value)
 import Types
 
-answersPage :: This -> CardWithID -> Effect ReactElement
-answersPage this { cardID, card } = do
+answersPage :: This -> QuestionCardWithID -> Effect ReactElement
+answersPage this { questionID, questionCard: { title } } = do
   state' <- getState this
   pure $
     div []
-    [ h1 [ cn "card-header" ] [ text card.title ]
+    [ h1 [ cn "question-header" ] [ text title ]
     , div [ cn "form" ]
       [ input
         [ _type "text", placeholder $ state'.t "answer", autoFocus true
@@ -32,10 +32,10 @@ answersPage this { cardID, card } = do
             let answer = state.answer
             if answer /= "" then do
               props <- getProps this
-              let encoded = encode $ Answer { cardID, answer }
+              let encoded = encode $ Answer { questionID, answer }
               broadcast props.peer encoded
               props.store.add "answers" encoded
-              modifyState this _ { answers = addAnswers state.answers cardID answer, answer = "" }
+              modifyState this _ { answers = addAnswers state.answers questionID answer, answer = "" }
             else pure unit
         ] [ text $ state'.t "post" ]
       ]
@@ -45,12 +45,12 @@ answersPage this { cardID, card } = do
   where
 
   answers :: Answers -> Array String
-  answers = Map.lookup cardID >>> fromMaybe []
+  answers = Map.lookup questionID >>> fromMaybe []
 
   showAnswer :: String -> ReactElement
   showAnswer = li [] <<< singleton <<< text
 
-addAnswers :: Answers -> CardID -> Answer -> Answers
-addAnswers answers cardID answer = Map.alter (case _ of
+addAnswers :: Answers -> QuestionID -> Answer -> Answers
+addAnswers answers questionID answer = Map.alter (case _ of
   Just xs -> Just $ answer : xs
-  Nothing -> Just $ singleton answer) cardID answers
+  Nothing -> Just $ singleton answer) questionID answers

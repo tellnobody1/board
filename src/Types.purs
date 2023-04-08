@@ -1,6 +1,6 @@
 module Types where
 
-import Api (Api, CardID, CardWithID)
+import Api (Api, QuestionID, QuestionCardWithID)
 import Data.Map (Map)
 import Effect (Effect)
 import Lib.Peer (Peer)
@@ -16,7 +16,7 @@ type Props =
 type State =
   { lang :: String
   , t :: String -> String
-  , cards :: Array CardWithID
+  , questions :: Array QuestionCardWithID
   , question :: String
   , answer :: String
   , answers :: Answers
@@ -25,7 +25,7 @@ type State =
 
 type This = ReactThis Props State
 
-data Nav = EmptyView | ViewCards | ViewCard CardID
+data Nav = EmptyView | ViewCards | ViewCard QuestionID
 
 type Store =
   { add :: Feed -> Uint8Array -> Effect Unit
@@ -34,4 +34,4 @@ type Store =
 
 type Feed = String
 
-type Answers = Map CardID (Array String)
+type Answers = Map QuestionID (Array String)

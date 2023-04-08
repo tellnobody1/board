@@ -1,7 +1,7 @@
 module Main where
 
 import Answer (addAnswers, answersPage)
-import Api (Api(Answer, Question), CardWithID, decode)
+import Api (Api(Answer, Question), QuestionCardWithID, decode)
 import Data.Array (drop, dropEnd, find, foldl, foldr, length, take, (:))
 import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
@@ -37,7 +37,7 @@ appClass = component "App" \this -> pure
   { state: 
     { lang: ""
     , t: identity
-    , cards: []
+    , questions: []
     , question: ""
     , answer: ""
     , answers: Map.empty
@@ -58,27 +58,27 @@ goHome this = do
 
 addPopstateListener' :: This -> Effect Unit
 addPopstateListener' this = addPopstateListener $ case _ of
-  Right cardID -> modifyState this _ { nav = ViewCard cardID }
+  Right questionID -> modifyState this _ { nav = ViewCard questionID }
   _ -> modifyState this _ { nav = ViewCards }
 
 restoreNav :: This -> Effect Unit
 restoreNav this = pathnames >>= case _ of
-  [ "post", cardID ] -> modifyState this _ { nav = ViewCard cardID }
+  [ "post", questionID ] -> modifyState this _ { nav = ViewCard questionID }
   _ -> goHome this
 
 restoreState :: This -> Effect Unit
 restoreState this = do
   props <- getProps this
   props.store.all "questions" \xs -> do
-    let cards = foldl (\acc -> case _ of
+    let questions = foldl (\acc -> case _ of
           Question a -> a : acc
           _ -> acc) [] xs
-    modifyState this _ { cards = cards }
+    modifyState this _ { questions = questions }
     restoreNav this
-    fetchImages this cards
+    fetchImages this questions
   props.store.all "answers" \xs -> do
     let answers = foldl (\acc -> case _ of
-          Answer { cardID, answer } -> addAnswers acc cardID answer
+          Answer { questionID, answer } -> addAnswers acc questionID answer
           _ -> acc) Map.empty xs
     modifyState this _ { answers = answers }
 
@@ -87,13 +87,13 @@ receiveData this = do
   props <- getProps this
   onConnection props.peer \conn ->
     onOpen conn $ onData conn \x -> case decode x of
-      Right (Question cardWithID) -> do
+      Right (Question questionCardWithID) -> do
         props.store.add "questions" x
-        modifyState this \s -> s { cards = cardWithID : s.cards }
+        modifyState this \s -> s { questions = questionCardWithID : s.questions }
         fetchImage this 0
-      Right (Answer { cardID, answer }) -> do
+      Right (Answer { questionID, answer }) -> do
         props.store.add "answers" x
-        modifyState this \s -> s { answers = addAnswers s.answers cardID answer }
+        modifyState this \s -> s { answers = addAnswers s.answers questionID answer }
       _ -> pure unit
 
 setLang :: This -> String -> Effect Unit
@@ -102,8 +102,8 @@ setLang this lang = do
     let keys = Map.fromFoldable $ split (Pattern "\n") v <#> split (Pattern "=") <#> \kv -> Tuple (joinWith "" $ take 1 kv) (joinWith "" $ drop 1 kv)
     modifyState this _ { lang = lang, t = \key -> fromMaybe key $ Map.lookup key keys }
 
-fetchImages :: This -> Array CardWithID -> Effect Unit
-fetchImages this cards = void $ sequence $ mapWithIndex (\i _ -> fetchImage this $ length cards - i - 1) cards
+fetchImages :: This -> Array QuestionCardWithID -> Effect Unit
+fetchImages this questions = void $ sequence $ mapWithIndex (\i _ -> fetchImage this $ length questions - i - 1) questions
 
 renderApp :: This -> Effect ReactElement
 renderApp this = do
@@ -112,15 +112,15 @@ renderApp this = do
     EmptyView -> pure mempty
     ViewCards -> do
       form <- questionForm this
-      cards <- questionCards this
+      questions <- questionCards this
       pure $
         div []
         [ form
-        , cards
+        , questions
         ]
-    ViewCard cardID ->
-      case find (\x -> x.cardID == cardID) state.cards of
-        Just card -> answersPage this card
+    ViewCard questionID ->
+      case find (\x -> x.questionID == questionID) state.questions of
+        Just question -> answersPage this question
         Nothing -> goHome this *> mempty
 
 main :: Effect Unit
@@ -138,7 +138,7 @@ renderClass = do
   openReq <- open "board" 2 =<< indexedDB =<< window
   onupgradeneeded openReq \version -> do
     res <- result' openReq
-    if version == 1 then deleteObjectStore "cards" res else pure unit
+    if version == 1 then deleteObjectStore "questions" res else pure unit
     createObjectStore "questions" =<< result' openReq
     createObjectStore "answers" =<< result' openReq
   onsuccess' openReq do

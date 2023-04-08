@@ -1,6 +1,6 @@
 module Question where
 
-import Api (Api(Question), CardWithID, encode)
+import Api (Api(Question), QuestionCardWithID, encode)
 import Data.Array (modifyAt, (:))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String.Common (joinWith)
@@ -40,13 +40,13 @@ questionForm this = do
           let question = state.question
           if question /= "" then do
             props <- getProps this
-            cardID <- randomUUID =<< crypto =<< window
-            let card = { title: question, background: Nothing }
-            let cardWithID = { cardID, card }
-            let encoded = encode $ Question cardWithID
+            questionID <- randomUUID =<< crypto =<< window
+            let questionCard = { title: question, background: Nothing }
+            let questionCardWithID = { questionID, questionCard }
+            let encoded = encode $ Question questionCardWithID
             broadcast props.peer encoded
             props.store.add "questions" encoded
-            modifyState this \s -> s { cards = cardWithID : s.cards, question = "" }
+            modifyState this \s -> s { questions = questionCardWithID : s.questions, question = "" }
             fetchImage this 0
           else pure unit
       ] [ text $ state'.t "post" ]
@@ -55,31 +55,32 @@ questionForm this = do
 questionCards :: This -> Effect ReactElement
 questionCards this = do
   state <- getState this
-  pure $ div [ cn "cards" ] $ state.cards <#> questionCard
+  pure $ div [ cn "questions" ] $ state.questions <#> questionCard
 
   where
 
-  questionCard :: CardWithID -> ReactElement
-  questionCard { cardID, card } =
+  questionCard :: QuestionCardWithID -> ReactElement
+  questionCard { questionID, questionCard: { title, background } } =
     div (
-    [ cn "card card-link"
+    [ cn "question question-link"
     , onClick $ const goToQuestion
-    ] <> showImage card.background) showTitle
+    ] <> showImage) showTitle
 
     where
 
     goToQuestion :: Effect Unit
     goToQuestion = do
-      pushState cardID $ "/post/"<>cardID
-      window >>= document >>= setTitle card.title
-      modifyState this _ { nav = ViewCard cardID }
+      pushState questionID $ "/post/"<>questionID
+      window >>= document >>= setTitle title
+      modifyState this _ { nav = ViewCard questionID }
 
     showTitle :: Array ReactElement
-    showTitle = [ span [ cn "card-title" ] [ text card.title ] ]   
+    showTitle = [ span [ cn "question-title" ] [ text title ] ]
 
-    showImage :: Maybe String -> Array R.Props
-    showImage Nothing = []
-    showImage (Just background) = [ style { background: background } ]
+    showImage :: Array R.Props
+    showImage = case background of
+      Nothing -> []
+      (Just x) -> [ style { background: x } ]
 
 fetchImage :: This -> Int -> Effect Unit
 fetchImage this i = do
@@ -97,4 +98,8 @@ fetchImage this i = do
   where
 
   setImage :: String -> Effect Unit
-  setImage background = modifyState this \s -> s { cards = fromMaybe s.cards (modifyAt i (\x -> x { card = x.card { background = Just background } }) s.cards) }
+  setImage background = modifyState this \s -> s {
+    questions = fromMaybe s.questions (modifyAt i (\x -> x {
+      questionCard = x.questionCard { background = Just background }
+    }) s.questions)
+  }
