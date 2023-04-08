@@ -1,7 +1,8 @@
 module Main where
 
-import Api (Api(Question, Answer), CardID, CardWithID, Answer, decode, encode)
-import Data.Array (drop, dropEnd, find, foldl, foldr, length, singleton, take, (:))
+import Answer (addAnswers, answersPage)
+import Api (Api(Answer, Question), CardWithID, decode)
+import Data.Array (drop, dropEnd, find, foldl, foldr, length, take, (:))
 import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
@@ -15,15 +16,13 @@ import Lib.Affjax (getEff)
 import Lib.Foreign (null)
 import Lib.History (addPopstateListener, pathnames, replaceState)
 import Lib.IndexedDB (IDBDatabase, add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, transaction, readonly, result, result', readwrite, getAllKeys, delete, deleteObjectStore)
-import Lib.Peer (broadcast, newPeer, onConnection, onData, onOpen)
-import Lib.React (cn, onChange, createRoot)
-import Lib.React (render) as R
+import Lib.Peer (newPeer, onConnection, onData, onOpen)
+import Lib.React (createRoot, render)
 import Partial.Unsafe (unsafePartial)
-import Prelude (Unit, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (/=), (<#>), (<$>), (<<<), (<>), (=<<), (==), (>>=), (>>>))
+import Prelude (Unit, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=), (>>>))
 import Question (questionForm, fetchImage, questionCards)
 import React (ReactClass, ReactElement, component, createLeafElement, getProps, getState, modifyState)
-import React.DOM (h1, button, div, input, text, ol, li)
-import React.DOM.Props (_type, autoFocus, onClick, placeholder, value)
+import React.DOM (div)
 import Types
 import Web.Event.EventTarget (addEventListener, eventListener)
 import Web.HTML (window)
@@ -44,11 +43,11 @@ appClass = component "App" \this -> pure
     , answers: Map.empty
     , nav: EmptyView
     }
-  , render: render this
+  , render: renderApp this
   , componentDidMount: do
       setLang this "uk"
       addPopstateListener' this
-      receiveCard this
+      receiveData this
       restoreState this
   }
 
@@ -83,8 +82,8 @@ restoreState this = do
           _ -> acc) Map.empty xs
     modifyState this _ { answers = answers }
 
-receiveCard :: This -> Effect Unit
-receiveCard this = do
+receiveData :: This -> Effect Unit
+receiveData this = do
   props <- getProps this
   onConnection props.peer \conn ->
     onOpen conn $ onData conn \x -> case decode x of
@@ -106,13 +105,8 @@ setLang this lang = do
 fetchImages :: This -> Array CardWithID -> Effect Unit
 fetchImages this cards = void $ sequence $ mapWithIndex (\i _ -> fetchImage this $ length cards - i - 1) cards
 
-addAnswers :: Answers -> CardID -> Answer -> Answers
-addAnswers answers cardID answer = Map.alter (case _ of
-  Just xs -> Just $ answer : xs
-  Nothing -> Just $ singleton answer) cardID answers
-
-render :: This -> Effect ReactElement
-render this = do
+renderApp :: This -> Effect ReactElement
+renderApp this = do
   state <- getState this
   case state.nav of
     EmptyView -> pure mempty
@@ -126,45 +120,8 @@ render this = do
         ]
     ViewCard cardID ->
       case find (\x -> x.cardID == cardID) state.cards of
-        Just card -> showComments this card
+        Just card -> answersPage this card
         Nothing -> goHome this *> mempty
-
-showComments :: This -> CardWithID -> Effect ReactElement
-showComments this { cardID, card } = do
-  state' <- getState this
-  pure $
-    div []
-    [ h1 [ cn "card-header" ] [ text card.title ]
-    , div [ cn "form" ]
-      [ input
-        [ _type "text", placeholder $ state'.t "answer", autoFocus true
-        , value state'.answer
-        , onChange \v -> modifyState this _ { answer = v }
-        ]
-      , button
-        [ _type "button"
-        , onClick \_ -> do
-            state <- getState this
-            let answer = state.answer
-            if answer /= "" then do
-              props <- getProps this
-              let encoded = encode $ Answer { cardID, answer }
-              broadcast props.peer encoded
-              props.store.add "answers" encoded
-              modifyState this _ { answers = addAnswers state.answers cardID answer, answer = "" }
-            else pure unit
-        ] [ text $ state'.t "post" ]
-      ]
-    , ol [ cn "answers" ] $ showAnswer <$> answers state'.answers
-    ]
-
-  where
-
-  answers :: Answers -> Array String
-  answers = Map.lookup cardID >>> fromMaybe []
-
-  showAnswer :: String -> ReactElement
-  showAnswer = li [] <<< singleton <<< text
 
 main :: Effect Unit
 main = do
@@ -199,7 +156,7 @@ renderClass = do
           }
     peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
     root <- (body =<< document =<< window) <#> unsafePartial fromJust <#> toElement >>= createRoot
-    R.render root $ createLeafElement appClass { peer, store }
+    render root $ createLeafElement appClass { peer, store }
 
 purgeCards :: IDBDatabase -> Effect Unit
 purgeCards db = do
