@@ -11,12 +11,11 @@ import React (ReactThis)
 type Props =
   { peer :: Peer
   , store :: Store
+  , t :: String -> String
   }
 
 type State =
-  { lang :: String
-  , t :: String -> String
-  , questions :: Array QuestionCardWithID
+  { questions :: Array QuestionCardWithID
   , question :: String
   , answer :: String
   , answers :: Answers

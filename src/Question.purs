@@ -26,10 +26,11 @@ import Web.HTML.Window (document, navigator)
 questionForm :: This -> Effect ReactElement
 questionForm this = do
   state' <- getState this
+  props <- getProps this
   pure $
     div [ cn "form" ]
     [ input
-      [ _type "text", placeholder $ state'.t "question", autoFocus true
+      [ _type "text", placeholder $ props.t "question", autoFocus true
       , value state'.question
       , onChange \v -> modifyState this _ { question = v }
       ]
@@ -39,7 +40,6 @@ questionForm this = do
           state <- getState this
           let question = state.question
           if question /= "" then do
-            props <- getProps this
             questionID <- randomUUID =<< crypto =<< window
             let questionCard = { title: question, background: Nothing }
             let questionCardWithID = { questionID, questionCard }
@@ -49,7 +49,7 @@ questionForm this = do
             modifyState this \s -> s { questions = questionCardWithID : s.questions, question = "" }
             fetchImage this 0
           else pure unit
-      ] [ text $ state'.t "post" ]
+      ] [ text $ props.t "post" ]
     ]
 
 questionCards :: This -> Effect ReactElement

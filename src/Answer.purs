@@ -16,12 +16,13 @@ import Types (Answer, Answers, Api(..), QuestionCardWithID, QuestionID, This)
 answersPage :: This -> QuestionCardWithID -> Effect ReactElement
 answersPage this { questionID, questionCard: { title } } = do
   state' <- getState this
+  props <- getProps this
   pure $
     div []
     [ h1 [ cn "question-header" ] [ text title ]
     , div [ cn "form" ]
       [ input
-        [ _type "text", placeholder $ state'.t "answer", autoFocus true
+        [ _type "text", placeholder $ props.t "answer", autoFocus true
         , value state'.answer
         , onChange \v -> modifyState this _ { answer = v }
         ]
@@ -31,13 +32,12 @@ answersPage this { questionID, questionCard: { title } } = do
             state <- getState this
             let answer = state.answer
             if answer /= "" then do
-              props <- getProps this
               let encoded = encode $ Answer { questionID, answer }
               broadcast props.peer encoded
               props.store.add "answers" encoded
               modifyState this _ { answers = addAnswers state.answers questionID answer, answer = "" }
             else pure unit
-        ] [ text $ state'.t "post" ]
+        ] [ text $ props.t "post" ]
       ]
     , ol [ cn "answers" ] $ showAnswer <$> answers state'.answers
     ]

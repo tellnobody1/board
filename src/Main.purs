@@ -7,6 +7,7 @@ import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, fromJust)
+import Data.String.CodeUnits (contains)
 import Data.String.Common (joinWith, split)
 import Data.String.Pattern (Pattern(..))
 import Data.Traversable (sequence)
@@ -30,14 +31,13 @@ import Web.HTML.Event.EventTypes (domcontentloaded)
 import Web.HTML.HTMLDocument (readyState, body)
 import Web.HTML.HTMLDocument.ReadyState (ReadyState(..))
 import Web.HTML.HTMLElement (toElement)
-import Web.HTML.Window (document, toEventTarget)
+import Web.HTML.Navigator (language)
+import Web.HTML.Window (document, toEventTarget, navigator)
 
 appClass :: ReactClass Props
 appClass = component "App" \this -> pure
   { state: 
-    { lang: ""
-    , t: identity
-    , questions: []
+    { questions: []
     , question: ""
     , answer: ""
     , answers: Map.empty
@@ -45,7 +45,6 @@ appClass = component "App" \this -> pure
     }
   , render: renderApp this
   , componentDidMount: do
-      setLang this "uk"
       addPopstateListener' this
       receiveData this
       restoreState this
@@ -109,12 +108,6 @@ receiveData this = do
           Nothing -> pure unit
       _ -> pure unit
 
-setLang :: This -> String -> Effect Unit
-setLang this lang = do
-  getEff ("/langs/"<>lang<>".js") \v -> do
-    let keys = Map.fromFoldable $ split (Pattern "\n") v <#> split (Pattern "=") <#> \kv -> Tuple (joinWith "" $ take 1 kv) (joinWith "" $ drop 1 kv)
-    modifyState this _ { lang = lang, t = \key -> fromMaybe key $ Map.lookup key keys }
-
 fetchImages :: This -> Array QuestionCardWithID -> Effect Unit
 fetchImages this questions = void $ sequence $ mapWithIndex (\i _ -> fetchImage this $ length questions - i - 1) questions
 
@@ -169,7 +162,18 @@ renderClass = do
           }
     peer <- newPeer { host: "uaapps.xyz", port: 443, secure: true, path: "/board" }
     root <- (body =<< document =<< window) <#> unsafePartial fromJust <#> toElement >>= createRoot
-    render root $ createLeafElement appClass { peer, store }
+    loadLang (\t -> render root $ createLeafElement appClass { peer, store, t })
+
+  where    
+
+  loadLang :: ((String -> String) -> Effect Unit) -> Effect Unit
+  loadLang f = do
+    lang <- (language =<< navigator =<< window) <#> \l ->
+          if contains (Pattern "uk") l then "uk"
+          else if contains (Pattern "zh") l then "zh"
+          else "en"
+    getEff ("/langs/" <> lang <> ".js") \v -> do
+      f \key -> fromMaybe key $ Map.lookup key $ Map.fromFoldable $ split (Pattern "\n") v <#> split (Pattern "=") <#> \kv -> Tuple (joinWith "" $ take 1 kv) (joinWith "" $ drop 1 kv)
 
 purgeCards :: IDBDatabase -> Effect Unit
 purgeCards db = do
