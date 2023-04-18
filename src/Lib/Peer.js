@@ -11,3 +11,5 @@ export const connect = peer => id => () => peer.connect(id)
 export const onOpen = conn => f => () => conn.on("open", () => f())
 
 export const send = conn => data => () => conn.send(data)
+
+export const peerID = conn => () => conn.peer

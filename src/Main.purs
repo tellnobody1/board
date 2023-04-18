@@ -1,8 +1,8 @@
 module Main where
 
 import Answer (addAnswers, answersPage)
-import Api (decode)
-import Data.Array (drop, dropEnd, find, foldl, foldr, length, take, (:))
+import Api (decode, encode)
+import Data.Array (drop, dropEnd, find, findIndex, foldl, foldr, length, take, (:))
 import Data.Either (Either(Right))
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
@@ -16,7 +16,7 @@ import Lib.Affjax (getEff)
 import Lib.Foreign (null)
 import Lib.History (addPopstateListener, pathnames, replaceState)
 import Lib.IndexedDB (IDBDatabase, add, createObjectStore, getAll, indexedDB, objectStore, onsuccess, onsuccess', onupgradeneeded, open, transaction, readonly, result, result', readwrite, getAllKeys, delete, deleteObjectStore)
-import Lib.Peer (newPeer, onConnection, onData, onOpen)
+import Lib.Peer (newPeer, onConnection, onData, onOpen, send, peerID, connect)
 import Lib.React (createRoot, render)
 import Partial.Unsafe (unsafePartial)
 import Prelude (Unit, bind, discard, identity, mempty, pure, unit, void, ($), (*>), (-), (<#>), (<$>), (<>), (=<<), (==), (>>=), (>>>))
@@ -94,6 +94,19 @@ receiveData this = do
       Right (Answer { questionID, answer }) -> do
         props.store.add "answers" x
         modifyState this \s -> s { answers = addAnswers s.answers questionID answer }
+        state <- getState this
+        case findIndex (\x' -> x'.questionID == questionID) state.questions of
+          Nothing -> do
+            conn1 <- peerID conn >>= connect props.peer
+            onOpen conn1 $ send conn1 $ encode $ Ask questionID
+          Just _ -> pure unit
+      Right (Ask questionID) -> do
+        state <- getState this
+        case find (\x' -> x'.questionID == questionID) state.questions of
+          Just q -> do
+            conn1 <- peerID conn >>= connect props.peer
+            onOpen conn1 $ send conn1 $ encode $ Question q
+          Nothing -> pure unit
       _ -> pure unit
 
 setLang :: This -> String -> Effect Unit

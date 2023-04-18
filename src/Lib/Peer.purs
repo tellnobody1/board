@@ -48,6 +48,8 @@ foreign import onOpen :: Connection -> Effect Unit -> Effect Unit
 
 foreign import send :: Connection -> Data -> Effect Unit
 
+foreign import peerID :: Connection -> Effect ID
+
 peers :: Peer -> (Array ID -> Effect Unit) -> Effect Unit
 peers peer f =
   runAff_ (case _ of

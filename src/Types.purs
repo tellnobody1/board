@@ -1,7 +1,7 @@
 module Types where
 
 import Data.Map (Map)
-import Data.Maybe (Maybe(Just, Nothing))
+import Data.Maybe (Maybe)
 import Effect (Effect)
 import Lib.Peer (Peer)
 import Prelude (Unit)
@@ -55,4 +55,4 @@ type AnswerWithID =
 
 type Answers = Map QuestionID (Array String)
 
-data Api = Question QuestionCardWithID | Answer AnswerWithID
+data Api = Question QuestionCardWithID | Answer AnswerWithID | Ask QuestionID
