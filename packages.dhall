@@ -1,5 +1,6 @@
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.15.7-20230325/packages.dhall sha256:98bd559174f64f82966f13583a14b67ab2010e8b1b79ba69f51af457d469d979
+      https://github.com/purescript/package-sets/releases/download/psc-0.15.14-20240213/packages.dhall
+        sha256:c7196e3a5895098b1bf108c8210429b658d2baaa6c188879d75effc293ffe45f
 
 in  upstream
   with protobuf =

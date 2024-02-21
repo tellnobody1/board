@@ -2,19 +2,33 @@
 
 ## build
 
+### compile
 ```sh
 brew install node
 npm i
 
 bin/com
+```
+
+### dev server
+```sh
+brew install php
 
 bin/run
 open http://localhost:9001
+```
 
+### repl
+```sh
 npx spago repl
 ```
 
-## server
+### upgrade
+```sh
+npx spago upgrade-set
+```
+
+## peer server
 
 ```sh
 npm i peer
